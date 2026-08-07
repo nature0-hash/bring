@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * instantly when the user picks a new language.
  */
 export function LanguageSelector({ compact = false }: { compact?: boolean }) {
-  const { language, setLanguage, options } = useLanguage();
+  const { language, setLanguage, options, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -57,7 +57,7 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
         </span>
         <span className="flex-1 text-left">
           <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#9CA3AF]">
-            Language
+            {t("s.language", "Language")}
           </span>
           <span className="flex items-center gap-1.5 font-semibold text-[#0A1224]">
             <span className="text-base leading-none">{current.flag}</span>
@@ -83,7 +83,7 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
           )}
         >
           <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">
-            Select language
+            {t("s.selectLanguage", "Select language")}
           </p>
           <ul className="max-h-72 overflow-y-auto py-1.5">
             {options.map((opt) => {

@@ -1,5 +1,5 @@
-/**
- * BrandCardArt — renders a realistic, brand-styled gift-card face for each
+﻿/**
+ * BrandCardArt renders a realistic, brand-styled gift-card face for each
  * brand (real brand colors + iconic marks / wordmarks) instead of a stock
  * photo. Keyed by card slug; falls back to a branded initial tile.
  *
@@ -36,67 +36,87 @@ function Face({
   );
 }
 
-function GiftLabel({ color = "rgba(255,255,255,0.55)" }: { color?: string }) {
-  return (
-    <span
-      className="absolute bottom-2.5 text-[8px] font-semibold uppercase tracking-[0.3em]"
-      style={{ color }}
-    >
-      Gift Card
-    </span>
-  );
-}
-
 export function BrandCardArt({ slug, brand }: Props) {
   switch (slug) {
     case "steam":
+      /* Inspired by the classic physical Steam card: a collage of game
+         artwork tiles behind the big white Steam logo + STEAM wordmark. */
       return (
-        <Face bg="linear-gradient(160deg, #1b2838 0%, #0a1420 70%, #050a12 100%)">
+        <Face bg="#0e1c2e">
+          <div className="pointer-events-none absolute inset-0 grid grid-cols-6 grid-rows-3 gap-[2px] opacity-55">
+            {[
+              "#7a3b2e", "#2d4a6b", "#4a2d5e", "#1f5c46", "#6b4a1f", "#3b2d6b",
+              "#5e2d3a", "#2d5e5a", "#6b5e2d", "#46315e", "#315e39", "#5e3131",
+              "#31465e", "#5e4631", "#3a5e2d", "#5e2d52", "#2d3a5e", "#4f5e2d",
+            ].map((c, i) => (
+              <div
+                key={i}
+                style={{
+                  background: `linear-gradient(${135 + (i % 4) * 45}deg, ${c}, rgba(10,18,30,0.9))`,
+                }}
+              />
+            ))}
+          </div>
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 30% 30%, rgba(102,192,244,0.18), transparent 55%), radial-gradient(circle at 80% 75%, rgba(66,122,155,0.20), transparent 55%)",
+                "radial-gradient(circle at 50% 42%, rgba(10,20,32,0.25), rgba(8,15,26,0.85) 80%)",
             }}
           />
-          <svg viewBox="0 0 88 88" className="h-16 w-16" aria-hidden>
-            <circle cx="44" cy="44" r="43" fill="#111d2e" stroke="#2a475e" strokeWidth="1.5" />
-            <circle cx="30" cy="55" r="16" fill="none" stroke="#66c0f4" strokeOpacity="0.35" strokeWidth="2.5" />
-            <circle cx="57" cy="27" r="13" fill="#67c1f5" />
-            <circle cx="57" cy="27" r="6.2" fill="#0a1420" />
-            <rect x="31" y="42" width="20" height="5.4" rx="2.7" fill="#67c1f5" transform="rotate(-32 41 44.5)" />
-            <circle cx="30" cy="55" r="9" fill="#417a9b" />
-            <circle cx="30" cy="55" r="4" fill="#0a1420" />
+          <svg viewBox="0 0 88 88" className="relative h-12 w-12 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" aria-hidden>
+            <circle cx="30" cy="55" r="16" fill="none" stroke="#ffffff" strokeOpacity="0.9" strokeWidth="3" />
+            <circle cx="57" cy="27" r="13" fill="#ffffff" />
+            <circle cx="57" cy="27" r="6.2" fill="#0e1c2e" />
+            <rect x="31" y="42" width="20" height="5.4" rx="2.7" fill="#ffffff" transform="rotate(-32 41 44.5)" />
+            <circle cx="30" cy="55" r="9" fill="#ffffff" />
+            <circle cx="30" cy="55" r="4" fill="#0e1c2e" />
           </svg>
-          <span className="font-display text-2xl font-extrabold tracking-[0.15em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">STEAM</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#66c0f4]">Wallet Code</span>
-          <GiftLabel color="rgba(102,192,244,0.55)" />
+          <span className="relative font-display text-2xl font-extrabold tracking-[0.18em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+            STEAM
+          </span>
         </Face>
       );
 
     case "razer-gold":
     case "razer":
+      /* Inspired by the official Razer Gold card: black face, green
+         diagonal wedge top-left, gold coin, "RAZER Gold" lockup. */
       return (
-        <Face bg="linear-gradient(160deg, #0a0a0a 0%, #050505 70%, #000000 100%)">
+        <Face bg="linear-gradient(150deg, #1c1c1c 0%, #0a0a0a 55%, #000000 100%)">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 50% 35%, rgba(68,214,44,0.18), transparent 55%), radial-gradient(circle at 80% 90%, rgba(68,214,44,0.08), transparent 55%)",
+                "linear-gradient(125deg, #44D62C 0%, #3bc026 24%, transparent 24.5%)",
             }}
           />
-          <svg viewBox="0 0 200 60" className="w-[80%] max-w-[200px]" aria-hidden>
-            <g fill="#44D62C">
-              <path d="M10 12 H70 L46 30 H22 L34 42 H60 L36 60 H12 L30 42 L10 12 Z" transform="translate(0,0)" />
-              <path d="M80 12 H140 L116 30 H92 L104 42 H130 L106 60 H82 L100 42 L80 12 Z" transform="translate(0,0) scale(0.85) translate(15,5)" opacity="0.85" />
-              <path d="M150 12 H210 L186 30 H162 L174 42 H200 L176 60 H152 L170 42 L150 12 Z" transform="translate(0,0) scale(0.7) translate(35,12)" opacity="0.7" />
-            </g>
-          </svg>
-          <span className="font-display text-xl font-extrabold tracking-[0.15em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">RAZER</span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: "#44D62C" }}>
-            GOLD PIN
-          </span>
-          <GiftLabel color="rgba(68,214,44,0.5)" />
+          <div className="relative flex items-center gap-3">
+            <svg viewBox="0 0 64 64" className="h-14 w-14 drop-shadow-[0_3px_8px_rgba(0,0,0,0.7)]" aria-hidden>
+              <defs>
+                <radialGradient id="rz-coin" cx="38%" cy="32%" r="75%">
+                  <stop offset="0%" stopColor="#ffe98a" />
+                  <stop offset="55%" stopColor="#f5c518" />
+                  <stop offset="100%" stopColor="#b8860b" />
+                </radialGradient>
+              </defs>
+              <circle cx="32" cy="32" r="30" fill="url(#rz-coin)" />
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#8a6508" strokeWidth="1.6" />
+              <path
+                d="M22 20 h20 l-13 10 h11 l-2 4 h-9 l13 10 h-20 l2-4 h10 l-14-11 h12 l2-3 h-14 Z"
+                fill="#7a5a06"
+                opacity="0.9"
+              />
+            </svg>
+            <div className="flex flex-col items-start leading-none">
+              <span className="font-display text-sm font-bold uppercase tracking-[0.42em] text-[#44D62C]">
+                Razer
+              </span>
+              <span className="mt-1 font-display text-3xl font-semibold tracking-tight text-white">
+                Gold
+              </span>
+            </div>
+          </div>
         </Face>
       );
 
@@ -112,8 +132,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <circle cx="29.5" cy="24.5" r="2.2" fill="#5865F2" />
           </svg>
           <span className="font-display text-xl font-extrabold tracking-tight text-white">Discord</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/70">Nitro</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -126,7 +144,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <path d="M14 15 h20 v4 h-14 v5 h12 v4 h-12 v5 h14 v4 h-20 Z" fill="#111" />
           </svg>
           <span className="font-display text-lg font-extrabold uppercase tracking-[0.1em] text-white">Epic Games</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -134,7 +151,6 @@ export function BrandCardArt({ slug, brand }: Props) {
       return (
         <Face bg="#000000">
           <span className="font-display text-4xl font-black uppercase tracking-tight text-white">Uber</span>
-          <GiftLabel color="rgba(255,255,255,0.5)" />
         </Face>
       );
 
@@ -148,7 +164,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             />
           </svg>
           <span className="font-display text-xl font-bold tracking-tight text-[#FF5A5F]">airbnb</span>
-          <GiftLabel color="rgba(0,0,0,0.4)" />
         </Face>
       );
 
@@ -161,8 +176,6 @@ export function BrandCardArt({ slug, brand }: Props) {
           >
             VISA
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60">Prepaid Card</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -174,87 +187,85 @@ export function BrandCardArt({ slug, brand }: Props) {
             <circle cx="38" cy="18" r="16" fill="#F79E1B" />
             <path d="M30 6a16 16 0 0 1 0 24 16 16 0 0 1 0-24Z" fill="#FF5F00" />
           </svg>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60">Prepaid Card</span>
-          <GiftLabel />
+          <span className="font-display text-base font-bold tracking-tight text-white">Mastercard</span>
         </Face>
       );
 
     case "amex":
+    case "american-express":
+      /* The classic American Express blue-box logo: royal-blue square
+         with stacked white "AMERICAN EXPRESS" lettering. */
       return (
-        <Face bg="linear-gradient(135deg, #006FCF 0%, #016FD0 50%, #00487A 100%)">
+        <Face bg="linear-gradient(140deg, #2E77BC 0%, #006FCF 45%, #00487A 100%)">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 20% 15%, rgba(255,255,255,0.22), transparent 45%), linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.10) 60%, transparent 80%)",
+                "radial-gradient(circle at 22% 18%, rgba(255,255,255,0.20), transparent 45%)",
             }}
           />
-          <div className="absolute left-3 top-2.5 flex items-center gap-1.5">
-            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/70">
-              American Express
-            </span>
-          </div>
-
-          <div className="relative flex flex-col items-center gap-1.5">
-            <svg viewBox="0 0 220 70" className="w-[78%] max-w-[220px]" aria-hidden>
-              <rect x="6" y="6" width="208" height="58" rx="3" fill="white" />
-              <text
-                x="110"
-                y="46"
-                fontFamily="Arial, Helvetica, sans-serif"
-                fontSize="30"
-                fontWeight="900"
-                fill="#006FCF"
-                textAnchor="middle"
-                letterSpacing="2"
-              >
-                AMEX
-              </text>
-              <rect x="14" y="14" width="22" height="14" rx="2" fill="#006FCF" opacity="0.85" />
-              <rect x="14" y="14" width="22" height="14" rx="2" fill="none" stroke="#00487A" strokeWidth="0.6" opacity="0.5" />
-              <line x1="20" y1="16" x2="20" y2="26" stroke="#9bc4ec" strokeWidth="0.7" />
-              <line x1="26" y1="16" x2="26" y2="26" stroke="#9bc4ec" strokeWidth="0.7" />
-              <line x1="30" y1="16" x2="30" y2="26" stroke="#9bc4ec" strokeWidth="0.7" />
-            </svg>
-            <span className="font-display text-[10px] font-bold uppercase tracking-[0.25em] text-white/85">
-              Platinum Travel
-            </span>
-          </div>
-
-          <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5">
-            <span className="font-mono text-[10px] font-semibold tracking-[0.18em] text-white/80">
-              3714 ••••• ••12
-            </span>
-          </div>
-          <div className="absolute bottom-2.5 right-3">
-            <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/70">
-              Member Since 24
-            </span>
-          </div>
+          <svg viewBox="0 0 96 96" className="relative h-[72px] w-[72px] drop-shadow-[0_4px_12px_rgba(0,20,50,0.45)]" aria-hidden>
+            <rect x="2" y="2" width="92" height="92" rx="6" fill="#006FCF" stroke="#ffffff" strokeWidth="2.5" />
+            <text
+              x="48" y="44"
+              fontFamily="Arial, Helvetica, sans-serif"
+              fontSize="12.5"
+              fontWeight="900"
+              fill="#ffffff"
+              textAnchor="middle"
+              letterSpacing="0.5"
+            >
+              AMERICAN
+            </text>
+            <text
+              x="48" y="60"
+              fontFamily="Arial, Helvetica, sans-serif"
+              fontSize="12.5"
+              fontWeight="900"
+              fill="#ffffff"
+              textAnchor="middle"
+              letterSpacing="0.5"
+            >
+              EXPRESS
+            </text>
+          </svg>
+          <span className="relative text-[11px] font-bold uppercase tracking-[0.2em] text-white/90">
+            American Express
+          </span>
         </Face>
       );
 
     case "apple":
+      return (
+        <Face bg="linear-gradient(135deg, #fbfbfd 0%, #f0f0f3 60%, #e8e8ec 100%)">
+          <svg viewBox="0 0 24 24" className="h-14 w-14" fill="#1d1d1f" aria-hidden>
+            <path d="M17.05 12.9c-.03-2.4 1.96-3.55 2.05-3.6-1.12-1.64-2.86-1.87-3.48-1.9-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.9-.43 7.2 1.2 9.56.8 1.15 1.75 2.44 3 2.4 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.13.75 1.29-.02 2.11-1.17 2.9-2.33.92-1.34 1.3-2.64 1.32-2.7-.03-.02-2.53-.97-2.55-3.85zM14.63 5.2c.66-.8 1.11-1.92.99-3.03-.95.04-2.11.64-2.8 1.44-.61.7-1.15 1.84-1 2.92 1.06.08 2.15-.54 2.81-1.33z" />
+          </svg>
+          <span className="font-display text-xl font-semibold tracking-tight text-[#1d1d1f]">
+            Apple
+          </span>
+        </Face>
+      );
+
     case "itunes":
       return (
         <Face bg="linear-gradient(135deg, #fbfbfd 0%, #f0f0f3 60%, #e8e8ec 100%)">
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 75% 25%, rgba(255,200,220,0.18), transparent 50%), radial-gradient(circle at 25% 75%, rgba(200,220,255,0.18), transparent 50%)",
-            }}
-          />
-          <svg viewBox="0 0 24 24" className="h-12 w-12" fill="#1d1d1f" aria-hidden>
-            <path d="M17.05 12.9c-.03-2.4 1.96-3.55 2.05-3.6-1.12-1.64-2.86-1.87-3.48-1.9-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.9-.43 7.2 1.2 9.56.8 1.15 1.75 2.44 3 2.4 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.13.75 1.29-.02 2.11-1.17 2.9-2.33.92-1.34 1.3-2.64 1.32-2.7-.03-.02-2.53-.97-2.55-3.85zM14.63 5.2c.66-.8 1.11-1.92.99-3.03-.95.04-2.11.64-2.8 1.44-.61.7-1.15 1.84-1 2.92 1.06.08 2.15-.54 2.81-1.33z" />
+          <svg viewBox="0 0 48 48" className="h-14 w-14" aria-hidden>
+            <defs>
+              <linearGradient id="itunes-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F452FF" />
+                <stop offset="100%" stopColor="#832BC1" />
+              </linearGradient>
+            </defs>
+            <circle cx="24" cy="24" r="21" fill="url(#itunes-grad)" />
+            <path
+              d="M31.5 12.5 l-12 2.6 a1.4 1.4 0 0 0 -1.1 1.37 v13.1 a4.1 4.1 0 0 0 -1.9 -.45 c-2 0 -3.6 1.2 -3.6 2.75 s1.6 2.75 3.6 2.75 c1.95 0 3.55 -1.17 3.6 -2.68 V20.1 l10 -2.15 v8.32 a4.1 4.1 0 0 0 -1.9 -.45 c-2 0 -3.6 1.23 -3.6 2.75 s1.6 2.75 3.6 2.75 c1.98 0 3.58 -1.2 3.6 -2.7 V13.85 a1.4 1.4 0 0 0 -1.7 -1.35 Z"
+              fill="#ffffff"
+            />
           </svg>
-          <span className="font-display text-base font-semibold tracking-tight text-[#1d1d1f]">
-            {brand === "iTunes" ? "iTunes" : "App Store"}
+          <span className="font-display text-xl font-semibold tracking-tight text-[#1d1d1f]">
+            iTunes
           </span>
-          <span className="text-[9px] font-medium uppercase tracking-[0.25em] text-[#86868B]">
-            Gift Card
-          </span>
-          <GiftLabel color="rgba(0,0,0,0.35)" />
         </Face>
       );
 
@@ -266,7 +277,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <path d="M42 48 Q 100 68, 158 46" stroke="#FF9900" strokeWidth="5" fill="none" strokeLinecap="round" />
             <path d="M148 40 L 160 46 L 151 55" stroke="#FF9900" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <GiftLabel />
         </Face>
       );
 
@@ -280,7 +290,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <path d="M48 50 L62 36 L86 50 L62 64 Z" fill="#FBBC04" />
           </svg>
           <span className="font-display text-lg font-medium tracking-tight text-[#5F6368]">Google Play</span>
-          <GiftLabel color="rgba(0,0,0,0.4)" />
         </Face>
       );
 
@@ -292,7 +301,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <path d="M24 12 C18 18, 12 28, 14 36 C18 28, 22 24, 24 22 C26 24, 30 28, 34 36 C36 28, 30 18, 24 12Z" fill="#107C10" />
           </svg>
           <span className="font-display text-2xl font-extrabold tracking-[0.12em] text-white">XBOX</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -300,8 +308,6 @@ export function BrandCardArt({ slug, brand }: Props) {
       return (
         <Face bg="linear-gradient(135deg, #003791, #0070d1)">
           <span className="font-display text-[26px] font-bold italic tracking-tight text-white">PlayStation</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/70">Network</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -311,7 +317,6 @@ export function BrandCardArt({ slug, brand }: Props) {
           <span className="font-display text-3xl font-extrabold tracking-[0.05em]" style={{ color: "#E50914" }}>
             NETFLIX
           </span>
-          <GiftLabel color="rgba(255,255,255,0.5)" />
         </Face>
       );
 
@@ -327,7 +332,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             </g>
           </svg>
           <span className="font-display text-xl font-bold tracking-tight text-white">Spotify</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -340,7 +344,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <span style={{ color: "#F5AF02" }}>a</span>
             <span style={{ color: "#86B817" }}>y</span>
           </div>
-          <GiftLabel color="rgba(0,0,0,0.4)" />
         </Face>
       );
 
@@ -355,7 +358,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             </g>
           </svg>
           <span className="font-display text-2xl font-bold tracking-tight text-white">Walmart</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -368,7 +370,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <circle cx="24" cy="24" r="6" fill="#fff" />
           </svg>
           <span className="font-display text-xl font-bold tracking-tight text-white">Target</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -379,7 +380,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <span className="font-display text-lg font-extrabold uppercase leading-none text-[#003B64]">Best</span>
             <span className="font-display text-lg font-extrabold uppercase leading-none text-[#003B64]">Buy</span>
           </div>
-          <GiftLabel />
         </Face>
       );
 
@@ -387,8 +387,6 @@ export function BrandCardArt({ slug, brand }: Props) {
       return (
         <Face bg="#000000">
           <span className="font-display text-2xl font-bold tracking-[0.25em] text-white">SEPHORA</span>
-          <div className="h-1 w-10 rounded-full" style={{ background: "linear-gradient(90deg,#ff512f,#dd2476)" }} />
-          <GiftLabel color="rgba(255,255,255,0.5)" />
         </Face>
       );
 
@@ -399,7 +397,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <path d="M6 30 C 30 12, 60 6, 96 2 C 60 14, 34 26, 12 34 C 9 35, 5 33, 6 30 Z" fill="#fff" />
           </svg>
           <span className="font-display text-lg font-extrabold uppercase tracking-[0.2em] text-white">Nike</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -414,7 +411,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             </g>
           </svg>
           <span className="font-display text-lg font-bold lowercase tracking-tight text-white">adidas</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -426,7 +422,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             <rect x="19" y="19" width="10" height="10" fill="#0f0f10" transform="rotate(8 24 24)" />
           </svg>
           <span className="font-display text-xl font-extrabold uppercase tracking-[0.1em] text-white">Roblox</span>
-          <GiftLabel />
         </Face>
       );
 
@@ -437,7 +432,6 @@ export function BrandCardArt({ slug, brand }: Props) {
             {brand.charAt(0).toUpperCase()}
           </span>
           <span className="font-display text-sm font-bold tracking-tight text-white">{brand}</span>
-          <GiftLabel />
         </Face>
       );
   }

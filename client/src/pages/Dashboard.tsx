@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   fetchAllGiftCards,
   createGiftCard,
@@ -33,6 +34,7 @@ import {
   listUsers,
   createUser,
   deleteUser,
+  changeMyPassword,
   fetchAllCountries,
   createCountry,
   updateCountry,
@@ -70,6 +72,7 @@ type TabKey = "overview" | "cards" | "rates" | "countries" | "team" | "content" 
 
 export default function Dashboard() {
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<TabKey>("overview");
   const [cards, setCards] = useState<GiftCard[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -155,21 +158,21 @@ export default function Dashboard() {
   }
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode; masterOnly?: boolean }[] = [
-    { key: "overview", label: "Overview", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { key: "cards", label: "Gift Cards", icon: <CreditCard className="h-4 w-4" /> },
-    { key: "rates", label: "Local Rates", icon: <TrendingUp className="h-4 w-4" /> },
-    { key: "countries", label: "Countries", icon: <Globe2 className="h-4 w-4" /> },
-    { key: "team", label: "Team", icon: <Users className="h-4 w-4" /> },
-    { key: "content", label: "Site Content", icon: <ImageIcon className="h-4 w-4" /> },
+    { key: "overview", label: t("tab.overview"), icon: <LayoutDashboard className="h-4 w-4" /> },
+    { key: "cards", label: t("tab.cards"), icon: <CreditCard className="h-4 w-4" /> },
+    { key: "rates", label: t("tab.rates"), icon: <TrendingUp className="h-4 w-4" /> },
+    { key: "countries", label: t("tab.countries"), icon: <Globe2 className="h-4 w-4" /> },
+    { key: "team", label: t("tab.team"), icon: <Users className="h-4 w-4" /> },
+    { key: "content", label: t("tab.content"), icon: <ImageIcon className="h-4 w-4" /> },
     {
       key: "users",
-      label: "User Management",
+      label: t("tab.users"),
       icon: <SettingsIcon className="h-4 w-4" />,
       masterOnly: true,
     },
   ];
 
-  const visibleTabs = tabs.filter((t) => !t.masterOnly || user.role === "master");
+  const visibleTabs = tabs.filter((tb) => !tb.masterOnly || user.role === "master");
 
   return (
     <div className="min-h-screen bg-[#F4F7FC]">
@@ -269,6 +272,7 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ user, tabs, tab, onTab, onLogout, onClose }: SidebarContentProps) {
+  const { t } = useLanguage();
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-5">
@@ -291,31 +295,31 @@ function SidebarContent({ user, tabs, tab, onTab, onLogout, onClose }: SidebarCo
           </div>
           <div className="min-w-0">
             <p className="truncate font-display text-sm font-bold text-[#0A1224]">{user.username}</p>
-            <p className="text-xs capitalize text-[#6B7384]">{user.role} access</p>
+            <p className="text-xs capitalize text-[#6B7384]">{user.role} {t("s.access", "access")}</p>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 py-4">
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">Dashboard</p>
+        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">{t("s.dashboard", "Dashboard")}</p>
         <ul className="space-y-1">
-          {tabs.map((t) => (
-            <li key={t.key}>
+          {tabs.map((item) => (
+            <li key={item.key}>
               <button
-                onClick={() => onTab(t.key)}
+                onClick={() => onTab(item.key)}
                 className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                  tab === t.key
+                  tab === item.key
                     ? "bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] text-white shadow-lg shadow-[#0047AB]/25"
                     : "text-[#3B4256] hover:bg-[#F4F7FC] hover:text-[#0047AB]"
                 }`}
               >
-                <span className={tab === t.key ? "text-white" : "text-[#6B7384] group-hover:text-[#0047AB]"}>
-                  {t.icon}
+                <span className={tab === item.key ? "text-white" : "text-[#6B7384] group-hover:text-[#0047AB]"}>
+                  {item.icon}
                 </span>
-                {t.label}
+                {item.label}
                 <ChevronRight
                   className={`ml-auto h-3.5 w-3.5 transition-transform ${
-                    tab === t.key ? "translate-x-0 text-white" : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                    tab === item.key ? "translate-x-0 text-white" : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
                   }`}
                 />
               </button>
@@ -327,13 +331,13 @@ function SidebarContent({ user, tabs, tab, onTab, onLogout, onClose }: SidebarCo
           <LanguageSelector />
         </div>
 
-        <p className="mb-2 mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">Public</p>
+        <p className="mb-2 mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">{t("s.public", "Public")}</p>
         <a
           href="/"
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#3B4256] transition-colors hover:bg-[#F4F7FC] hover:text-[#0047AB]"
         >
           <ArrowLeft className="h-4 w-4 text-[#6B7384] group-hover:text-[#0047AB]" />
-          Back to website
+          {t("s.back", "Back to website")}
         </a>
       </nav>
 
@@ -343,7 +347,7 @@ function SidebarContent({ user, tabs, tab, onTab, onLogout, onClose }: SidebarCo
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-sm font-semibold text-[#DC2626] hover:bg-[#DC2626] hover:text-white transition-colors"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("s.signout", "Sign out")}
         </button>
       </div>
     </div>
@@ -457,23 +461,20 @@ function OverviewTab({
   loadingCards: boolean;
   onGoToCards: () => void;
 }) {
+  const { t } = useLanguage();
   const activeCards = cards.filter((c) => c.isActive);
-  const avgRate = activeCards.length
-    ? activeCards.reduce((sum, c) => sum + c.baseRate, 0) / activeCards.length
-    : 0;
 
   const stats = [
-    { label: "Total cards", value: cards.length.toString(), icon: <CreditCard className="h-4 w-4" />, accent: "from-[#0047AB] to-[#1E5BD6]" },
-    { label: "Active cards", value: activeCards.length.toString(), icon: <Activity className="h-4 w-4" />, accent: "from-[#16A34A] to-[#22C55E]" },
-    { label: "Avg payout rate", value: `${(avgRate * 100).toFixed(1)}%`, icon: <TrendingUp className="h-4 w-4" />, accent: "from-[#C9A24B] to-[#E5C77B]" },
-    { label: "Your role", value: user.role, icon: <ShieldCheck className="h-4 w-4" />, accent: "from-[#7C3AED] to-[#A855F7]" },
+    { label: t("o.totalCards", "Total cards"), value: cards.length.toString(), icon: <CreditCard className="h-4 w-4" />, accent: "from-[#0047AB] to-[#1E5BD6]" },
+    { label: t("o.activeCards", "Active cards"), value: activeCards.length.toString(), icon: <Activity className="h-4 w-4" />, accent: "from-[#16A34A] to-[#22C55E]" },
+    { label: t("o.yourRole", "Your role"), value: user.role, icon: <ShieldCheck className="h-4 w-4" />, accent: "from-[#7C3AED] to-[#A855F7]" },
   ];
 
   return (
     <div>
-      <PageHeader title={`Welcome back, ${user.username}.`} subtitle="Here's what's happening on your platform today." />
+      <PageHeader title={`${t("o.welcome", "Welcome back")}, ${user.username}.`} subtitle={t("o.subtitle", "Here's what's happening on your platform today.")} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
@@ -495,19 +496,22 @@ function OverviewTab({
       <div className="mt-8 rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-4">
           <div>
-            <h3 className="font-display text-base font-bold text-[#0A1224]">Recent card rates</h3>
-            <p className="text-xs text-[#6B7384]">Latest 5 cards in your catalogue</p>
+            <h3 className="font-display text-base font-bold text-[#0A1224]">{t("o.recentRates", "Recent card rates")}</h3>
+            <p className="text-xs text-[#6B7384]">{t("o.recentSub", "Latest 5 updated cards in your catalogue")}</p>
           </div>
           <button onClick={onGoToCards} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0047AB] hover:underline">
-            Manage all
+            {t("o.manageAll", "Manage all")}
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
         <div className="divide-y divide-[#F4F7FC]">
           {loadingCards ? (
-            <div className="p-8 text-center text-sm text-[#6B7384]">Loading…</div>
+            <div className="p-8 text-center text-sm text-[#6B7384]">{t("c.loading", "Loading")}…</div>
           ) : (
-            cards.slice(0, 5).map((c) => (
+            [...cards]
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+              .slice(0, 5)
+              .map((c) => (
               <div key={c.id} className="flex items-center justify-between px-6 py-3.5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F4F7FC] text-xs font-bold text-[#0047AB]">
@@ -543,6 +547,7 @@ function CardsTab({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState<number | "new" | null>(null);
   const [brand, setBrand] = useState("");
   const [slug, setSlug] = useState("");
@@ -642,15 +647,15 @@ function CardsTab({
   return (
     <div>
       <PageHeader
-        title="Gift Cards"
-        subtitle="Create, edit, and organize every brand on your storefront."
+        title={t("tab.cards", "Gift Cards")}
+        subtitle={t("gc.subtitle", "Create, edit, and organize every brand on your storefront.")}
         action={
           <button
             onClick={() => setSelectedId("new")}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0047AB]/25 hover:shadow-xl transition-all"
           >
             <Plus className="h-4 w-4" />
-            New card
+            {t("gc.newCard", "New card")}
           </button>
         }
       />
@@ -659,8 +664,8 @@ function CardsTab({
         <div className="lg:col-span-3">
           <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">All gift cards</h3>
-              <p className="text-xs text-[#6B7384]">Tap a card to edit it</p>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("gc.allCards", "All gift cards")}</h3>
+              <p className="text-xs text-[#6B7384]">{t("gc.tapEdit", "Tap a card to edit it")}</p>
             </div>
             {loading ? (
               <div className="p-8 text-center text-sm text-[#6B7384]">Loading cards…</div>
@@ -840,6 +845,7 @@ function CardsTab({
 
 /* LOCAL RATES TAB */
 function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Country[] }) {
+  const { t } = useLanguage();
   const [cardId, setCardId] = useState<number | null>(cards[0]?.id ?? null);
   const [countryId, setCountryId] = useState<number | null>(countries[0]?.id ?? null);
   const [rates, setRates] = useState<CardRate[]>([]);
@@ -924,13 +930,13 @@ function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Cou
   return (
     <div>
       <PageHeader
-        title="Local Rates"
-        subtitle="Set exact payout amounts per country and denomination. These override the fallback percentage rate."
+        title={t("tab.rates", "Local Rates")}
+        subtitle={t("lr.subtitle", "Set exact payout amounts per country and denomination. These override the fallback percentage rate.")}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Gift card</label>
+          <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">{t("lr.giftCard", "Gift card")}</label>
           <select
             value={cardId ?? ""}
             onChange={(e) => setCardId(Number(e.target.value))}
@@ -944,7 +950,7 @@ function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Cou
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Country</label>
+          <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">{t("lr.country", "Country")}</label>
           <select
             value={countryId ?? ""}
             onChange={(e) => setCountryId(Number(e.target.value))}
@@ -962,16 +968,16 @@ function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Cou
       <div className="mt-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
         <div className="border-b border-[#E2E8F0] px-6 py-4">
           <h3 className="font-display text-base font-bold text-[#0A1224]">
-            {selectedCard?.brand ?? "—"} · {selectedCountry?.name ?? "—"}
+            {selectedCard?.brand ?? "..."} · {selectedCountry?.name ?? "..."}
           </h3>
-          <p className="text-xs text-[#6B7384]">Denominations configured for this pair</p>
+          <p className="text-xs text-[#6B7384]">{t("lr.pairSub", "Denominations configured for this pair")}</p>
         </div>
 
         {loadingRates ? (
           <div className="p-8 text-center text-sm text-[#6B7384]">Loading…</div>
         ) : rates.length === 0 ? (
           <div className="p-8 text-center text-sm text-[#6B7384]">
-            No local rates yet — the public calculator will fall back to the card's global percentage rate.
+            No local rates yet. The public calculator will fall back to the card's global percentage rate.
           </div>
         ) : (
           <div className="divide-y divide-[#F4F7FC]">
@@ -1011,7 +1017,7 @@ function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Cou
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-[#3B4256]">
-              Local payout ({selectedCountry?.currencyCode ?? "—"})
+              Local payout ({selectedCountry?.currencyCode ?? "..."})
             </label>
             <input
               type="number"
@@ -1027,7 +1033,7 @@ function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Cou
             className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] px-4 py-2.5 text-sm font-semibold text-white shadow-md disabled:opacity-70"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Save rate
+            {t("lr.saveRate", "Save rate")}
           </button>
         </div>
       </div>
@@ -1045,6 +1051,7 @@ function CountriesTab({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("");
@@ -1103,13 +1110,13 @@ function CountriesTab({
 
   return (
     <div>
-      <PageHeader title="Countries" subtitle="Manage which countries your calculator supports, and their currencies." />
+      <PageHeader title={t("tab.countries", "Countries")} subtitle={t("co.subtitle", "Manage which countries your calculator supports, and their currencies.")} />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <form onSubmit={handleCreate} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] bg-gradient-to-br from-[#F4F7FC] to-[#E6EEFB] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">Add country</h3>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("co.add", "Add country")}</h3>
             </div>
             <div className="space-y-3 p-6">
               <div className="grid grid-cols-2 gap-3">
@@ -1153,7 +1160,7 @@ function CountriesTab({
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-70"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add country
+                {t("co.add", "Add country")}
               </button>
             </div>
           </form>
@@ -1162,7 +1169,7 @@ function CountriesTab({
         <div className="lg:col-span-3">
           <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">All countries</h3>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("co.all", "All countries")}</h3>
               <p className="text-xs text-[#6B7384]">{countries.length} supported</p>
             </div>
             {loading ? (
@@ -1211,6 +1218,7 @@ function TeamTab({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const { t } = useLanguage();
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [name, setName] = useState("");
   const [roleLabel, setRoleLabel] = useState("");
@@ -1286,15 +1294,15 @@ function TeamTab({
   return (
     <div>
       <PageHeader
-        title="Team"
-        subtitle="Support agents shown on the public site — customers can WhatsApp them directly."
+        title={t("tab.team", "Team")}
+        subtitle={t("tm.subtitle", "Support agents shown on the public site. Customers can WhatsApp them directly.")}
         action={
           <button
             onClick={() => setEditingId("new")}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
           >
             <Plus className="h-4 w-4" />
-            Add member
+            {t("tm.addMember", "Add member")}
           </button>
         }
       />
@@ -1303,7 +1311,7 @@ function TeamTab({
         <div className="lg:col-span-3">
           <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">Team members</h3>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("tm.members", "Team members")}</h3>
             </div>
             {loading ? (
               <div className="p-8 text-center text-sm text-[#6B7384]">Loading…</div>
@@ -1420,6 +1428,7 @@ function TeamTab({
 
 /* SITE CONTENT TAB */
 function SiteContentTab() {
+  const { t } = useLanguage();
   const [images, setImages] = useState<SiteImagesMap>({});
   const [settings, setSettingsState] = useState<SettingsMap>({});
   const [loading, setLoading] = useState(true);
@@ -1464,8 +1473,8 @@ function SiteContentTab() {
   };
 
   const imageSlots = [
-    { key: "founder_mandy", label: "Founder — Boss Mandy" },
-    { key: "founder_kevin", label: "Founder — Boss Kevin" },
+    { key: "founder_mandy", label: "Founder: Boss Mandy" },
+    { key: "founder_kevin", label: "Founder: Boss Kevin" },
   ];
 
   if (loading) {
@@ -1474,12 +1483,12 @@ function SiteContentTab() {
 
   return (
     <div>
-      <PageHeader title="Site Content" subtitle="Manage images and global settings shown on the public site." />
+      <PageHeader title={t("tab.content", "Site Content")} subtitle={t("sc.subtitle", "Manage images and global settings shown on the public site.")} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
           <div className="border-b border-[#E2E8F0] px-6 py-4">
-            <h3 className="font-display text-base font-bold text-[#0A1224]">Founder photos</h3>
+            <h3 className="font-display text-base font-bold text-[#0A1224]">{t("sc.founderPhotos", "Founder photos")}</h3>
             <p className="text-xs text-[#6B7384]">Shown in the "Meet Our Founders" section</p>
           </div>
           <div className="space-y-5 p-6">
@@ -1498,11 +1507,11 @@ function SiteContentTab() {
 
         <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
           <div className="border-b border-[#E2E8F0] px-6 py-4">
-            <h3 className="font-display text-base font-bold text-[#0A1224]">General settings</h3>
+            <h3 className="font-display text-base font-bold text-[#0A1224]">{t("sc.general", "General settings")}</h3>
           </div>
           <div className="space-y-4 p-6">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Default WhatsApp number</label>
+              <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">{t("sc.whatsappLabel", "Default WhatsApp number")}</label>
               <input
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
@@ -1519,7 +1528,7 @@ function SiteContentTab() {
               className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] px-5 py-2.5 text-sm font-semibold text-white shadow-lg disabled:opacity-70"
             >
               {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Save
+              {t("c.save", "Save")}
             </button>
           </div>
         </div>
@@ -1540,12 +1549,48 @@ function UsersTab({
   currentUser: User;
   onRefresh: () => void;
 }) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<UserRole>("staff");
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // Change-my-password form state.
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPw) {
+      toast.error("Enter your current password.");
+      return;
+    }
+    if (newPw.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    setChangingPw(true);
+    try {
+      await changeMyPassword(currentPw, newPw);
+      toast.success("Password updated. Use your new password next time you log in.");
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to change password.");
+    } finally {
+      setChangingPw(false);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1589,21 +1634,21 @@ function UsersTab({
   return (
     <div>
       <PageHeader
-        title="User Management"
-        subtitle="Create staff accounts for your team. Staff users can manage rates but cannot create or delete users."
+        title={t("tab.users", "User Management")}
+        subtitle={t("u.subtitle", "Create staff accounts for your team. Staff users can manage rates but cannot create or delete users.")}
       />
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
           <form onSubmit={handleCreate} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] bg-gradient-to-br from-[#F4F7FC] to-[#E6EEFB] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">Create new user</h3>
-              <p className="text-xs text-[#6B7384]">New account will be active immediately</p>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("u.createNew", "Create new user")}</h3>
+              <p className="text-xs text-[#6B7384]">{t("u.activeNote", "New account will be active immediately")}</p>
             </div>
 
             <div className="space-y-4 p-6">
               <div>
-                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">Username</label>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("c.username", "Username")}</label>
                 <input
                   type="text"
                   value={username}
@@ -1615,7 +1660,7 @@ function UsersTab({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">Password</label>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("c.password", "Password")}</label>
                 <div className="relative">
                   <input
                     type={showPw ? "text" : "password"}
@@ -1637,7 +1682,7 @@ function UsersTab({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">Role</label>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("c.role", "Role")}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(["staff", "master"] as UserRole[]).map((r) => (
                     <button
@@ -1656,7 +1701,7 @@ function UsersTab({
                 </div>
                 <p className="mt-2 text-xs text-[#6B7384]">
                   {role === "master"
-                    ? "Master: full access — manage rates and users."
+                    ? "Master: full access. Manages rates and users."
                     : "Staff: rate management only. Cannot manage users."}
                 </p>
               </div>
@@ -1674,9 +1719,76 @@ function UsersTab({
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    Create user
+                    {t("u.createUser", "Create user")}
                   </>
                 )}
+              </button>
+            </div>
+          </form>
+
+          {/* Change my password */}
+          <form onSubmit={handleChangePassword} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="border-b border-[#E2E8F0] bg-gradient-to-br from-[#F4F7FC] to-[#E6EEFB] px-6 py-4">
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("u.changePw", "Change my password")}</h3>
+              <p className="text-xs text-[#6B7384]">{t("u.changePwSub", "Update the password for your own account.")}</p>
+            </div>
+
+            <div className="space-y-4 p-6">
+              <div>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("u.currentPw", "Current password")}</label>
+                <input
+                  type={showChangePw ? "text" : "password"}
+                  value={currentPw}
+                  onChange={(e) => setCurrentPw(e.target.value)}
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] placeholder:text-[#9CA3AF] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("u.newPw", "New password")}</label>
+                <div className="relative">
+                  <input
+                    type={showChangePw ? "text" : "password"}
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Min 6 characters"
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 pl-4 pr-11 text-sm text-[#0A1224] placeholder:text-[#9CA3AF] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePw(!showChangePw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#6B7384] hover:bg-[#F4F7FC]"
+                    aria-label={showChangePw ? "Hide password" : "Show password"}
+                  >
+                    {showChangePw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#0A1224] mb-1.5">{t("u.confirmPw", "Confirm new password")}</label>
+                <input
+                  type={showChangePw ? "text" : "password"}
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] placeholder:text-[#9CA3AF] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={changingPw}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] py-3 text-sm font-semibold text-white shadow-lg shadow-[#0047AB]/25 transition-all hover:shadow-xl hover:shadow-[#0047AB]/35 disabled:opacity-70"
+              >
+                {changingPw ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4" />
+                )}
+                {t("u.updatePw", "Update password")}
               </button>
             </div>
           </form>
@@ -1685,7 +1797,7 @@ function UsersTab({
         <div className="lg:col-span-3">
           <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
             <div className="border-b border-[#E2E8F0] px-6 py-4">
-              <h3 className="font-display text-base font-bold text-[#0A1224]">Team members</h3>
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("u.teamMembers", "Team members")}</h3>
               <p className="text-xs text-[#6B7384]">{users.length} user{users.length === 1 ? "" : "s"} total</p>
             </div>
             {loading ? (

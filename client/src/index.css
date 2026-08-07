@@ -83,6 +83,9 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Kill the blue tap-flash overlay mobile browsers paint on tapped
+       elements (the blue box that appeared over the hero headline). */
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     background: var(--color-background);

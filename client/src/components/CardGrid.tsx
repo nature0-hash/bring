@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X } from "lucide-react";
 import type { GiftCard } from "@/lib/types";
 import { CARD_CATEGORIES } from "@/lib/types";
-import { formatUSD } from "@/lib/utils";
 import { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
 import { BrandCardArt } from "@/components/BrandCardArt";
 
@@ -13,7 +12,46 @@ interface CardGridProps {
   onSelectCard?: (slug: string) => void;
 }
 
-const DENOMINATIONS = [25, 50, 100, 200, 500];
+/**
+ * Real-world purchasable denominations per brand: the single-card values
+ * a customer can actually buy in stores / online. "custom" marks brands
+ * that also sell variable-load cards above the listed values.
+ *
+ * This tells visitors what card values exist (e.g. you can't buy one
+ * physical $300 Apple card, but Apple does sell custom loads).
+ */
+const BRAND_DENOMINATIONS: Record<string, { values: number[]; custom?: boolean }> = {
+  steam:         { values: [5, 10, 20, 25, 50, 100] },
+  apple:         { values: [25, 50, 100, 200], custom: true },
+  itunes:        { values: [25, 50, 100, 200], custom: true },
+  amazon:        { values: [10, 25, 50, 100, 200, 500], custom: true },
+  "google-play": { values: [10, 15, 25, 50, 100, 200] },
+  xbox:          { values: [15, 25, 50, 100] },
+  playstation:   { values: [25, 50, 75, 100, 200] },
+  netflix:       { values: [15, 25, 30, 50, 100] },
+  spotify:       { values: [10, 30, 60] },
+  ebay:          { values: [25, 50, 100, 150, 200] },
+  walmart:       { values: [25, 50, 100, 200, 500], custom: true },
+  target:        { values: [10, 25, 50, 100, 500], custom: true },
+  "best-buy":    { values: [25, 50, 100, 200, 500] },
+  sephora:       { values: [10, 25, 50, 100, 250] },
+  nike:          { values: [25, 50, 100, 200, 250] },
+  adidas:        { values: [10, 25, 50, 100, 250] },
+  roblox:        { values: [10, 25, 50, 100] },
+  discord:       { values: [10, 25, 50, 100] },
+  "epic-games":  { values: [10, 25, 50, 100] },
+  epic:          { values: [10, 25, 50, 100] },
+  uber:          { values: [15, 25, 50, 100, 500], custom: true },
+  airbnb:        { values: [25, 50, 100, 200, 500], custom: true },
+  visa:          { values: [25, 50, 100, 200, 500] },
+  mastercard:    { values: [25, 50, 100, 200, 500] },
+  amex:          { values: [25, 50, 100, 200, 500] },
+  "american-express": { values: [25, 50, 100, 200, 500] },
+  "razer-gold":  { values: [10, 20, 25, 50, 100] },
+  razer:         { values: [10, 20, 25, 50, 100] },
+};
+
+const DEFAULT_DENOMINATIONS = { values: [25, 50, 100, 200, 500] as number[], custom: false };
 
 export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
   const [query, setQuery] = useState("");
@@ -54,7 +92,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search gift cards — Steam, Apple, Amazon…"
+            placeholder="Search gift cards: Steam, Apple, Amazon…"
             className="w-full rounded-2xl border border-[#E2E8F0] bg-white py-4 pl-14 pr-12 text-base text-[#0A1224] shadow-sm placeholder:text-[#9CA3AF] focus:border-[#0047AB] focus:outline-none focus:ring-4 focus:ring-[#0047AB]/10 transition-all"
           />
           {query && (
@@ -119,6 +157,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 }
 
 function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
+  const denoms = BRAND_DENOMINATIONS[card.slug] ?? DEFAULT_DENOMINATIONS;
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -144,23 +183,26 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
           {card.brand}
         </h3>
         <p className="mt-0.5 hidden text-xs text-[#6B7384] sm:mt-1 sm:block">
-          Tap to calculate your payout
+          Available card values
         </p>
 
-        {/* Rate table — collapses to a 2-row mini grid on mobile so the
-            denominations still fit two columns wide without overflow. */}
-        <div className="mt-3 grid grid-cols-5 gap-1 sm:gap-1.5">
-          {DENOMINATIONS.map((d) => (
-            <div
+        {/* Denomination chips: the single-card values customers can
+            actually buy for this brand, plus a "custom" chip when the
+            brand also sells variable-load amounts. */}
+        <div className="mt-3 flex flex-wrap gap-1 sm:gap-1.5">
+          {denoms.values.map((d) => (
+            <span
               key={d}
-              className="rounded-lg bg-[#F4F7FC] px-0.5 py-1 text-center sm:px-1 sm:py-2"
+              className="rounded-lg bg-[#F4F7FC] px-1.5 py-1 text-center font-mono text-[9px] font-bold text-[#0047AB] sm:px-2 sm:py-1.5 sm:text-[11px]"
             >
-              <p className="text-[8px] font-medium uppercase text-[#6B7384] sm:text-[9px]">${d}</p>
-              <p className="mt-0.5 font-mono text-[9px] font-bold text-[#0047AB] sm:text-[11px]">
-                {formatUSD(d * card.baseRate, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-            </div>
+              ${d}
+            </span>
           ))}
+          {denoms.custom && (
+            <span className="rounded-lg bg-[#C9A24B]/15 px-1.5 py-1 text-center font-mono text-[9px] font-bold text-[#9B7A2E] sm:px-2 sm:py-1.5 sm:text-[11px]">
+              Custom
+            </span>
+          )}
         </div>
       </div>
 

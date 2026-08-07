@@ -6,7 +6,6 @@ import { useCountry } from "@/lib/useCountry";
 import { fetchCardRates, fetchSettings } from "@/lib/api";
 import { convertFromUSD } from "@/lib/fx";
 import type { CardRate } from "@/lib/types";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const DEFAULT_WHATSAPP_NUMBER = "84779423224";
 
@@ -47,7 +46,6 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
   const [rates, setRates] = useState<CardRate[]>([]);
   const [loadingRates, setLoadingRates] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
-  const { t } = useLanguage();
 
   const { countries, countryCode, selectedCountry, selectCountry } = useCountry();
 
@@ -151,13 +149,10 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
               Instant quotation
             </p>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0A1224] sm:text-4xl lg:text-5xl">
-              {t("calc.title", "Live exchange rate calculator")}
+              Live exchange rate calculator
             </h2>
             <p className="mt-4 text-base text-[#6B7384] sm:text-lg">
-              {t(
-                "calc.subtitle",
-                "Select your country, card, and amount to see your exact payout estimate before starting your WhatsApp trade."
-              )}
+              Select your country, card, and amount to see your exact payout estimate before starting your WhatsApp trade.
             </p>
           </div>
         </AnimatedSection>
@@ -275,7 +270,7 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
                           </>
                         ) : (
                           <>
-                            We offer some of the <strong className="text-[#0047AB]">best rates</strong> in the market — chat with us for your exact quote.
+                            We offer some of the <strong className="text-[#0047AB]">best rates</strong> in the market. Chat with us for your exact quote.
                           </>
                         )}
 
@@ -290,7 +285,7 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
                   <div className="relative flex flex-col items-center justify-between gap-6 sm:flex-row">
                     <div className="text-center sm:text-left">
                       <p className="text-xs font-semibold uppercase tracking-wider text-white/60">
-                        {t("calc.resultLabel", "Estimated instant payout")}
+                        Estimated instant payout
                       </p>
                       <p
                         data-testid="calc-result"
@@ -299,7 +294,7 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
                         {formatted}
                       </p>
                       <p className="mt-1 font-mono text-[11px] text-white/70">
-                        {selectedCard?.brand ?? "—"} · ${faceValue} face value
+                        {selectedCard?.brand ?? "..."} · ${faceValue} face value
                       </p>
                     </div>
 
@@ -311,7 +306,7 @@ export function RateCalculator({ cards, loading, selectedSlug, onSelectSlug }: R
                       className="inline-flex w-full flex-none items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-bold text-[#0047AB] shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl sm:w-auto"
                     >
                       <MessageCircle className="h-4 w-4" />
-                      {t("cta.tradeNow", "Trade this amount now")}
+                      Trade this amount now
                     </a>
                   </div>
                 </div>

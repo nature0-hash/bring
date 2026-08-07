@@ -34,7 +34,7 @@ export function Footer() {
                 </h2>
                 <p className="mt-4 max-w-md text-base leading-relaxed text-white/75">
                   Get an instant quote, ship your card, and receive payment in your
-                  preferred currency — anywhere in the world.
+                  preferred currency, anywhere in the world.
                 </p>
               </div>
 

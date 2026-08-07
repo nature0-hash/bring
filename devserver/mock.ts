@@ -189,6 +189,19 @@ app.get("/api/users", (_req, res) => {
   res.json({ users: [FAKE_USER] });
 });
 
+app.patch("/api/users", (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword) {
+    res.status(400).json({ error: "Current password is required." });
+    return;
+  }
+  if (!newPassword || String(newPassword).length < 6) {
+    res.status(400).json({ error: "New password must be at least 6 characters." });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[mock-api] listening on http://0.0.0.0:${PORT}`);
 });

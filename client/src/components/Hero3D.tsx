@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
-import { ShieldCheck, Zap, X } from "lucide-react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { ShieldCheck, Zap } from "lucide-react";
 
 /**
  * Premium hero showcase — three realistic gift cards
@@ -290,14 +290,20 @@ function AppleScribbleLogo({ className = "" }: { className?: string }) {
         fill="#F5F5F7"
       />
       <g clipPath="url(#apple-clip)" stroke="none">
-        <rect x="20" y="20" width="35" height="30" fill="#FFD700" />
-        <rect x="20" y="35" width="35" height="20" fill="#ADFF2F" />
-        <rect x="40" y="18" width="30" height="30" fill="#00CED1" />
-        <rect x="35" y="38" width="40" height="30" fill="#FF1493" />
-        <rect x="55" y="20" width="35" height="50" fill="#FF6347" />
-        <rect x="25" y="60" width="60" height="30" fill="#8A2BE2" />
-        <rect x="45" y="8" width="20" height="20" fill="#5B86E5" />
-        <rect x="45" y="18" width="20" height="12" fill="#FF69B4" />
+        {/* Full-bleed color patches — together they cover the entire
+            0–100 viewBox so every pixel inside the apple silhouette is
+            painted and no grey base shows through anywhere. */}
+        <rect x="0" y="0" width="100" height="100" fill="#5B86E5" />
+        <rect x="0" y="0" width="55" height="34" fill="#00CED1" />
+        <rect x="40" y="0" width="60" height="30" fill="#FF69B4" />
+        <rect x="0" y="28" width="42" height="30" fill="#FFD700" />
+        <rect x="36" y="26" width="38" height="28" fill="#ADFF2F" />
+        <rect x="66" y="24" width="34" height="34" fill="#FF6347" />
+        <rect x="0" y="52" width="46" height="26" fill="#FF1493" />
+        <rect x="40" y="50" width="36" height="26" fill="#00CED1" />
+        <rect x="70" y="52" width="30" height="26" fill="#FFD700" />
+        <rect x="0" y="72" width="52" height="28" fill="#8A2BE2" />
+        <rect x="46" y="70" width="54" height="30" fill="#FF6347" />
       </g>
       <g clipPath="url(#apple-clip)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" fill="none">
         <path d="M22 28 Q 50 22, 80 28" />
@@ -408,54 +414,46 @@ function GooglePlayCard() {
   );
 }
 
-/* MOBILE HERO — an inline, contained interactive spread that mirrors
-   the desktop click-to-spread behavior. The cards render at a small
-   fixed scale inside a constrained relative container, so when they
-   fan out they stay within the hero bounds and never obscure the
-   content behind them. A light backdrop tints the local area only,
-   rather than covering the whole screen.
+/* MOBILE HERO — a centered fan of the three real card designs, spread
+   the way you'd fan out banknotes in your hand: the middle card stays
+   upright while the outer two tilt away left and right from a shared
+   bottom pivot. The whole fan sits in the middle of the hero and stays
+   fully inside the screen on every phone width.
 
-   Click cycle mirrors the desktop version:
-     State 0 (default): compact stack (back cards tucked behind)
-     Click to State 1:   fan out (cards spread wide)
-     Click to State 2:   compact stack
-     Click to State 3:   fan out (other direction)
-     Click to State 0:   compact stack (cycle repeats)
-*/
+   Tapping anywhere on the fan toggles between the money-fan spread
+   (default) and a neat stack, then back again. */
 export function Hero3DMobilePreview() {
-  const [open, setOpen] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
-  const phase = clickCount % 4;
-  const isStacked = phase === 0 || phase === 2;
-  const isSpreadUp = phase === 3;
+  const isSpread = clickCount % 2 === 0;
 
-  const dir = isSpreadUp ? -1 : 1;
+  const FAN_OFFSET_X = 66;
+  const FAN_OFFSET_Y = 14;
+  const FAN_ANGLE = 17;
 
-  const COMPACT_OFFSET_X = 26;
-  const COMPACT_OFFSET_Y = 8;
-  const SPREAD_OFFSET_X = 64;
-  const SPREAD_OFFSET_Y = 28;
+  // Left card of the fan (back).
+  const card3Target = isSpread
+    ? { x: -FAN_OFFSET_X, y: FAN_OFFSET_Y, rotate: -FAN_ANGLE, zIndex: 10, scale: 0.98 }
+    : { x: -8, y: 5, rotate: -4, zIndex: 10, scale: 0.96 };
 
-  const card1Target = isStacked
-    ? { x: 0, y: 0, rotate: 0, zIndex: 30, scale: 1 }
-    : { x: 0, y: 0, rotate: -10, zIndex: 30, scale: 1 };
+  // Middle card of the fan.
+  const card2Target = isSpread
+    ? { x: 0, y: 0, rotate: 0, zIndex: 20, scale: 1 }
+    : { x: -4, y: 2, rotate: -2, zIndex: 20, scale: 0.98 };
 
-  const card2Target = isStacked
-    ? { x: -COMPACT_OFFSET_X, y: COMPACT_OFFSET_Y, rotate: -6, zIndex: 20, scale: 0.96 }
-    : { x: -SPREAD_OFFSET_X, y: SPREAD_OFFSET_Y * dir, rotate: -22, zIndex: 20, scale: 1 };
-
-  const card3Target = isStacked
-    ? { x: -COMPACT_OFFSET_X * 2, y: COMPACT_OFFSET_Y * 2, rotate: -12, zIndex: 10, scale: 0.92 }
-    : { x: -SPREAD_OFFSET_X * 2, y: SPREAD_OFFSET_Y * 2 * dir, rotate: -34, zIndex: 10, scale: 1 };
+  // Right card of the fan (front).
+  const card1Target = isSpread
+    ? { x: FAN_OFFSET_X, y: FAN_OFFSET_Y, rotate: FAN_ANGLE, zIndex: 30, scale: 0.98 }
+    : { x: 0, y: 0, rotate: 0, zIndex: 30, scale: 1 };
 
   const spring = { type: "spring" as const, stiffness: 220, damping: 22, mass: 0.8 };
 
   return (
     <div className="relative">
       <div
-        className="relative mx-auto flex h-[210px] w-full max-w-sm items-center justify-center"
+        className="relative mx-auto flex h-[230px] w-full max-w-sm items-center justify-center"
         style={{ perspective: 1400 }}
+        onClick={() => setClickCount((c) => c + 1)}
       >
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/25 blur-[80px]"
@@ -463,40 +461,36 @@ export function Hero3DMobilePreview() {
         />
 
         <motion.div
-          animate={isStacked ? { y: [0, -6, 0] } : { y: 0 }}
+          animate={{ y: [0, -6, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="relative h-[180px] w-[260px]"
+          className="relative h-[190px] w-[280px]"
         >
           <motion.div
-            className="absolute left-1/2 top-1/2"
-            onClick={() => setClickCount((c) => c + 1)}
+            className="absolute left-1/2 top-1/2 cursor-pointer"
             animate={card3Target}
             transition={spring}
             style={{ transform: "translate(-50%, -50%)" }}
           >
-            <div style={{ transform: "scale(0.34)", transformOrigin: "center" }}>
+            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
               <GooglePlayCard />
             </div>
           </motion.div>
 
           <motion.div
-            className="absolute left-1/2 top-1/2"
-            onClick={() => setClickCount((c) => c + 1)}
+            className="absolute left-1/2 top-1/2 cursor-pointer"
             animate={card2Target}
             transition={spring}
             style={{ transform: "translate(-50%, -50%)" }}
           >
-            <div style={{ transform: "scale(0.36)", transformOrigin: "center" }}>
+            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
               <AmazonCard />
             </div>
           </motion.div>
 
           <motion.div
             className="absolute left-1/2 top-1/2 cursor-pointer"
-            onClick={() => setClickCount((c) => c + 1)}
             animate={card1Target}
             transition={spring}
-            whileHover={{ scale: 1.04 }}
             style={{ transform: "translate(-50%, -50%)" }}
           >
             <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
@@ -504,144 +498,7 @@ export function Hero3DMobilePreview() {
             </div>
           </motion.div>
         </motion.div>
-
-        <button
-          type="button"
-          onClick={() => setClickCount((c) => c + 1)}
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80 ring-1 ring-white/20 backdrop-blur-sm transition-all hover:bg-white/20"
-        >
-          {isStacked ? "Tap to spread" : "Tap to stack"}
-        </button>
       </div>
-
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mx-auto mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:text-white"
-      >
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-          </svg>
-        </span>
-        View full size
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0A1224]/85 backdrop-blur-md"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            onClick={() => setOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="relative max-h-[90vh] w-full max-w-md px-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close full-size preview"
-                className="absolute -top-2 -right-2 z-10 rounded-full bg-white p-2 text-[#0A1224] shadow-lg ring-1 ring-black/10"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              <Hero3DMobileFullSize />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function Hero3DMobileFullSize() {
-  const [clickCount, setClickCount] = useState(0);
-
-  const phase = clickCount % 4;
-  const isStacked = phase === 1 || phase === 3;
-  const isSpreadUp = phase === 2;
-
-  const dir = isSpreadUp ? -1 : 1;
-
-  const SPREAD_OFFSET_X = 56;
-  const SPREAD_OFFSET_Y = 40;
-
-  const card1Target = isStacked
-    ? { x: 0, y: -4, rotate: -3, zIndex: 30, scale: 1 }
-    : { x: 0, y: 0, rotate: -14, zIndex: 30, scale: 1 };
-
-  const card2Target = isStacked
-    ? { x: 0, y: 0, rotate: 0, zIndex: 20, scale: 1 }
-    : { x: -SPREAD_OFFSET_X, y: SPREAD_OFFSET_Y * dir, rotate: -26, zIndex: 20, scale: 1 };
-
-  const card3Target = isStacked
-    ? { x: 0, y: 4, rotate: 3, zIndex: 10, scale: 1 }
-    : { x: -SPREAD_OFFSET_X * 2, y: SPREAD_OFFSET_Y * 2 * dir, rotate: -38, zIndex: 10, scale: 1 };
-
-  const spring = { type: "spring" as const, stiffness: 180, damping: 20, mass: 0.8 };
-
-  return (
-    <div
-      className="relative mx-auto flex h-[420px] w-full items-center justify-center"
-      style={{ perspective: 1600 }}
-      onClick={() => setClickCount((c) => c + 1)}
-    >
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/40 blur-[90px]" />
-
-      <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="relative h-[300px] w-[300px]"
-      >
-        <motion.div
-          className="absolute left-1/2 top-1/2 cursor-pointer"
-          animate={card3Target}
-          transition={spring}
-          whileHover={{ scale: 1.04 }}
-          style={{ transform: "translate(-50%, -50%)" }}
-        >
-          <div style={{ transform: "scale(0.55)", transformOrigin: "center" }}>
-            <GooglePlayCard />
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="absolute left-1/2 top-1/2 cursor-pointer"
-          animate={card2Target}
-          transition={spring}
-          whileHover={{ scale: 1.04 }}
-          style={{ transform: "translate(-50%, -50%)" }}
-        >
-          <div style={{ transform: "scale(0.55)", transformOrigin: "center" }}>
-            <AmazonCard />
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="absolute left-1/2 top-1/2 cursor-pointer"
-          animate={card1Target}
-          transition={spring}
-          whileHover={{ scale: 1.04 }}
-          style={{ transform: "translate(-50%, -50%)" }}
-        >
-          <div style={{ transform: "scale(0.55)", transformOrigin: "center" }}>
-            <AppleCard />
-          </div>
-        </motion.div>
-      </motion.div>
-
-      <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
-        Tap anywhere to {isStacked ? "spread" : "stack"}
-      </p>
     </div>
   );
 }

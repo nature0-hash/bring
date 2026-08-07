@@ -1,13 +1,14 @@
 /**
  * /api/users  (master-only)
- * GET    — list all users.
- * POST   — create a new user.  Body: { username, password, role }
- * DELETE — delete a user.      Query: ?id=<userId>
+ * GET    lists all users.
+ * POST   creates a new user.  Body: { username, password, role }
+ * PATCH  changes the caller's own password. Body: { currentPassword, newPassword }
+ * DELETE deletes a user.      Query: ?id=<userId>
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { query, queryOne } from "./_lib/db.js";
 import { withCors, json, error, requireMaster } from "./_lib/http.js";
-import { hashPassword } from "./_lib/auth.js";
+import { hashPassword, verifyPassword } from "./_lib/auth.js";
 
 interface UserRow {
   id: number;
@@ -70,6 +71,37 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
       return error(res, "Failed to create user.", 500);
     }
     return json(res, { user: serialize(created) }, 201);
+  }
+
+  if (req.method === "PATCH") {
+    // Change the caller's own password.
+    const body = typeof req.body === "object" && req.body ? (req.body as Record<string, unknown>) : {};
+    const currentPassword = String(body.currentPassword ?? "");
+    const newPassword = String(body.newPassword ?? "");
+
+    if (!currentPassword) {
+      return error(res, "Current password is required.", 400);
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return error(res, "New password must be at least 6 characters.", 400);
+    }
+
+    const me = await queryOne<{ id: number; password_hash: string }>`
+      SELECT id, password_hash FROM users WHERE id = ${payload.sub}
+    `;
+    if (!me) {
+      return error(res, "Account not found.", 404);
+    }
+    const valid = await verifyPassword(currentPassword, me.password_hash);
+    if (!valid) {
+      return error(res, "Current password is incorrect.", 401);
+    }
+
+    const hash = await hashPassword(newPassword);
+    await queryOne<{ id: number }>`
+      UPDATE users SET password_hash = ${hash} WHERE id = ${me.id} RETURNING id
+    `;
+    return json(res, { ok: true });
   }
 
   if (req.method === "DELETE") {

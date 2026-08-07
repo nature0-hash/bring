@@ -146,7 +146,7 @@ function Hero({
             Trusted by 12,000+ traders worldwide
           </motion.div>
 
-          <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
+          <h1 className="select-none font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
             <motion.span
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -313,7 +313,7 @@ function HowItWorks() {
     {
       num: "03",
       title: "Get paid in minutes",
-      desc: "Choose your preferred payout — bank, crypto, or wallet. Funds land in under 5 minutes.",
+      desc: "Choose your preferred payout: bank, crypto, or wallet. Funds land in under 5 minutes.",
     },
   ];
   return (
@@ -467,7 +467,7 @@ function WhyUs() {
     {
       icon: <Zap className="h-5 w-5" />,
       title: "Lightning-fast payouts",
-      desc: "Average payout time is under 5 minutes. No waiting days for your money to clear — we move at the speed of your business.",
+      desc: "Average payout time is under 5 minutes. No waiting days for your money to clear, because we move at the speed of your business.",
     },
     {
       icon: <TrendingUp className="h-5 w-5" />,
@@ -537,7 +537,7 @@ function AboutSection({
   whatsappLink: string;
 }) {
   const promises = [
-    "Best rate guarantee — we'll match any verified competitor",
+    "Best rate guarantee: we'll match any verified competitor",
     "5-minute average payout, or your fee back",
     "Real human support, 24/7, on WhatsApp",
     "Full compliance with AML/KYC in every market we serve",
@@ -662,7 +662,7 @@ function AboutSection({
                 Meet Our Founders
               </h2>
               <p className="mx-auto mt-3 max-w-md text-center text-sm text-[#6B7384] sm:text-base">
-                The people behind Bring Gift Card — dedicated to providing you with the
+                The people behind Bring Gift Card, dedicated to providing you with the
                 best global trading experience.
               </p>
 
@@ -720,7 +720,7 @@ function TeamSection({ staff }: { staff: Staff[] }) {
               Talk to a real human, anytime
             </h2>
             <p className="mt-4 text-base text-[#6B7384] sm:text-lg">
-              Reach any of our support agents directly on WhatsApp — pick whoever's online.
+              Reach any of our support agents directly on WhatsApp. Pick whoever's online.
             </p>
           </div>
         </AnimatedSection>

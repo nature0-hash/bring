@@ -132,6 +132,13 @@ export function fetchMe(): Promise<{ user: User }> {
   return request<{ user: User }>("/api/me");
 }
 
+export function changeMyPassword(currentPassword: string, newPassword: string): Promise<{ ok: true }> {
+  return request<{ ok: true }>("/api/users", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 /* Admin: legacy rate management */
 
 export function updateRate(id: number, baseRate: number): Promise<{ card: GiftCard }> {
