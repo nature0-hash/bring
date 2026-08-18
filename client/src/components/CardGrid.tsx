@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import type { GiftCard } from "@/lib/types";
 import { CARD_CATEGORIES } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
+import { BrandCardArt } from "@/components/BrandCardArt";
 
 interface CardGridProps {
   cards: GiftCard[];
@@ -11,6 +12,14 @@ interface CardGridProps {
   onSelectCard?: (slug: string) => void;
 }
 
+/**
+ * Real-world purchasable denominations per brand: the single-card values
+ * a customer can actually buy in stores / online. "custom" marks brands
+ * that also sell variable-load cards above the listed values.
+ *
+ * This tells visitors what card values exist (e.g. you can't buy one
+ * physical $300 Apple card, but Apple does sell custom loads).
+ */
 const BRAND_DENOMINATIONS: Record<string, { values: number[]; custom?: boolean }> = {
   steam:         { values: [5, 10, 20, 25, 50, 100] },
   apple:         { values: [25, 50, 100, 200], custom: true },
@@ -57,7 +66,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
     const q = query.trim().toLowerCase();
     return cards.filter((c) => {
       const matchesCategory = category === "all" || c.category === category;
-      const matchesQuery = !q || c.brand.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q);
+      const matchesQuery = !q || c.brand.toLowerCase().includes(q) || c.slug.includes(q);
       return matchesCategory && matchesQuery;
     });
   }, [cards, query, category]);
@@ -69,6 +78,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 
   return (
     <div id="cards" className="relative">
+      {/* Search bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -97,6 +107,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
         </div>
       </motion.div>
 
+      {/* Category tabs */}
       {categoryTabs.length > 1 && (
         <div className="mx-auto mb-8 flex max-w-5xl flex-wrap items-center justify-center gap-2">
           {categoryTabs.map((t) => (
@@ -121,6 +132,10 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
         <span className="font-semibold">{cards.length}</span> tradable cards · live rates
       </p>
 
+      {/* Grid
+          Mobile: compact 2-column layout so the catalog fits a phone
+          screen without long single-column scrolling. Tablet+: 3 then
+          4 columns of full-width cards. */}
       {loading ? (
         <CardSkeletonGrid />
       ) : filtered.length === 0 ? (
@@ -142,9 +157,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 }
 
 function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
-  // Safety fallback: if card.slug is undefined or not in the map, use default values
-  const denoms = (card.slug && BRAND_DENOMINATIONS[card.slug]) || DEFAULT_DENOMINATIONS;
-  
+  const denoms = BRAND_DENOMINATIONS[card.slug] ?? DEFAULT_DENOMINATIONS;
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -157,20 +170,18 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
       }}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm hover:shadow-[0_20px_50px_-15px_rgba(0,71,171,0.25)] hover:border-[#0047AB]/30 transition-all duration-300"
     >
+      {/* Card art — real brand-styled gift-card face.
+          Slightly shorter on mobile so two columns fit cleanly. */}
       <div className="relative h-28 overflow-hidden sm:h-44">
         {card.imageUrl ? (
           <img src={card.imageUrl} alt={card.brand} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#E2E8F0] to-[#F4F7FC]">
-            <svg className="h-10 w-10 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-            </svg>
-            <span className="text-[11px] font-medium text-[#9CA3AF]">No image</span>
-          </div>
+          <BrandCardArt slug={card.slug} brand={card.brand} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
+      {/* Body */}
       <div className="p-3 sm:p-5">
         <h3 className="font-display text-xs font-bold tracking-tight text-[#0A1224] sm:text-base line-clamp-1">
           {card.brand}
@@ -179,6 +190,9 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
           Available card values
         </p>
 
+        {/* Denomination chips: the single-card values customers can
+            actually buy for this brand, plus a "custom" chip when the
+            brand also sells variable-load amounts. */}
         <div className="mt-3 flex flex-wrap gap-1 sm:gap-1.5">
           {denoms.values.map((d) => (
             <span
@@ -196,7 +210,7 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
         </div>
       </div>
 
-      {/* Note: 'shimmer' class requires custom CSS or Tailwind plugin */}
+      {/* Hover sheen */}
       <div className="pointer-events-none absolute inset-0 rounded-2xl shimmer opacity-0 group-hover:opacity-100" />
     </motion.article>
   );
@@ -240,7 +254,7 @@ function EmptyState({ query, onReset }: { query: string; onReset: () => void }) 
           <Search className="h-5 w-5 text-[#6B7384]" />
         </div>
         <p className="font-display text-base font-semibold text-[#0A1224]">
-          No cards match "{query}"
+          No cards match “{query}”
         </p>
         <p className="mt-1 text-sm text-[#6B7384]">
           Try a different brand name or clear your search.

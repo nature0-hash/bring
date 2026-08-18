@@ -17,8 +17,8 @@ import {
 import { Header } from "@/components/Header";
 import { Hero3D, Hero3DMobilePreview } from "@/components/Hero3D";
 
-import { CardGrid } from "@/components/CardGrid";
 import { RateCalculator } from "@/components/RateCalculator";
+import { UploadEditSave } from "@/components/UploadEditSave";
 import { Footer } from "@/components/Footer";
 
 import { AdminLoginModal } from "@/components/AdminLoginModal";
@@ -80,7 +80,7 @@ export default function Home() {
           selectedSlug={selectedSlug}
           onSelectSlug={setSelectedSlug}
         />
-        <CardsSection cards={cards} loading={loadingCards} onSelectCard={setSelectedSlug} />
+        <CardsSection />
 
         <ServicesSection />
         <WhyUs />
@@ -357,33 +357,28 @@ function HowItWorks() {
 }
 
 /* CARDS SECTION */
-function CardsSection({
-  cards,
-  loading,
-  onSelectCard,
-}: {
-  cards: GiftCard[];
-  loading: boolean;
-  onSelectCard?: (slug: string) => void;
-}) {
+function CardsSection() {
   return (
-    <section className="relative bg-gradient-to-b from-white to-[#F4F7FC] py-28 sm:py-36">
+    <section
+      id="cards"
+      className="relative bg-gradient-to-b from-white to-[#F4F7FC] py-28 sm:py-36"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <AnimatedSection>
           <div className="mx-auto mb-16 max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#0047AB]">
-              Live card rates
+              Manage cards
             </p>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0A1224] sm:text-4xl lg:text-5xl">
-              All brands. Best rates.
+              Upload. Edit. Save.
             </h2>
             <p className="mt-4 text-base text-[#6B7384] sm:text-lg">
-              Rates update in real time. Search any brand to see what you'll get paid today.
+              Pick a card, drop in a new image, rename the brand, and hit save. Changes go live instantly.
             </p>
           </div>
         </AnimatedSection>
 
-        <CardGrid cards={cards} loading={loading} onSelectCard={onSelectCard} />
+        <UploadEditSave />
       </div>
     </section>
   );
