@@ -57,7 +57,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
     const q = query.trim().toLowerCase();
     return cards.filter((c) => {
       const matchesCategory = category === "all" || c.category === category;
-      const matchesQuery = !q || c.brand.toLowerCase().includes(q) || c.slug.includes(q);
+      const matchesQuery = !q || c.brand.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
   }, [cards, query, category]);
@@ -142,7 +142,9 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 }
 
 function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
-  const denoms = BRAND_DENOMINATIONS[card.slug] ?? DEFAULT_DENOMINATIONS;
+  // Safety fallback: if card.slug is undefined or not in the map, use default values
+  const denoms = (card.slug && BRAND_DENOMINATIONS[card.slug]) || DEFAULT_DENOMINATIONS;
+  
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -194,6 +196,7 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
         </div>
       </div>
 
+      {/* Note: 'shimmer' class requires custom CSS or Tailwind plugin */}
       <div className="pointer-events-none absolute inset-0 rounded-2xl shimmer opacity-0 group-hover:opacity-100" />
     </motion.article>
   );
