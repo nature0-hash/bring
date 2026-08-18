@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
 import { ShieldCheck, Zap } from "lucide-react";
 
 /**
@@ -239,119 +239,55 @@ function CardShell({ children, background, withWatermark = true }: CardProps) {
   );
 }
 
-/* APPLE GIFT CARD — clean white card with a colorful Apple logo
-   composed as the dominant focal element. The logo sits in a balanced
-   three-row vertical rhythm (label → logo → store tag) and is visually
-   integrated into the white card via a soft color halo that bleeds its
-   rainbow palette into the surrounding surface, plus a quiet background
-   wash. The result reads as one properly designed Apple gift card rather
-   than a white card with a logo pasted on top. */
+/* APPLE GIFT CARD — soft premium pastel gradient with a large centered
+   white Apple logo and a small "Apple Gift Card" wordmark in the
+   bottom-right. Recreated from the supplied reference design: a smooth
+   diagonal blend of peach/pink → lavender → pale blue → soft mint
+   green, with a flat-white Apple silhouette and minimal typography.
+   No promotional copy, no App Store / iTunes tag, no rainbow scribble.
+   The card keeps the same CardShell + dimensions (440×277, ~1.586:1)
+   so the existing three-card hero composition is unchanged. */
 function AppleCard() {
   return (
     <CardShell
+      withWatermark={false}
       background={
-        <>
-          <div className="absolute inset-0 bg-white" />
-          {/* Quiet background wash that echoes the logo's rainbow palette
-              so the white card feels like an extension of the artwork,
-              not a neutral frame around it. */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255,120,180,0.10), transparent 65%), radial-gradient(ellipse 50% 50% at 22% 30%, rgba(120,200,255,0.10), transparent 65%), radial-gradient(ellipse 50% 50% at 78% 75%, rgba(255,210,120,0.10), transparent 65%)",
-            }}
-          />
-        </>
+        <div
+          className="absolute inset-0"
+          style={{
+            /* Pastel multi-stop diagonal gradient matching the supplied
+               Apple Gift Card reference: peach → pink → lavender →
+               pale blue → soft mint green. */
+            background:
+              "linear-gradient(135deg, #FAD0C4 0%, #FFD1FF 25%, #E0C3FC 50%, #A1C4FD 75%, #C6FFDD 100%)",
+          }}
+        />
       }
     >
-      <div className="flex h-full flex-col items-center justify-between py-1 text-center">
-        {/* Top label */}
-        <div className="pt-1">
-          <p className="font-display text-[20px] font-normal leading-tight text-[#1D1D1F]">
-            The gift card for
-          </p>
-          <p className="font-display text-[20px] font-semibold leading-tight text-[#1D1D1F]">
-            everything Apple.
-          </p>
-        </div>
-
-        {/* Apple logo — dominant focal element. A soft color halo behind
-            it bridges the rainbow fill with the white card surface so the
-            artwork feels integrated rather than pasted on. The logo is
-            sized to read as the hero of the card while leaving generous
-            breathing room above and below. */}
-        <div className="relative flex items-center justify-center">
-          <div
-            className="pointer-events-none absolute inset-0 -m-6 rounded-full opacity-70 blur-2xl"
-            style={{
-              background:
-                "radial-gradient(circle at 30% 30%, rgba(255,105,180,0.45), transparent 55%), radial-gradient(circle at 70% 30%, rgba(255,165,90,0.40), transparent 55%), radial-gradient(circle at 30% 70%, rgba(120,200,255,0.40), transparent 55%), radial-gradient(circle at 70% 70%, rgba(150,90,255,0.40), transparent 55%)",
-            }}
-            aria-hidden
+      <div className="relative flex h-full w-full items-center justify-center">
+        {/* Large centered white Apple silhouette — flat fill, no
+            outline, with a very soft drop shadow for depth. */}
+        <svg
+          viewBox="0 0 100 100"
+          className="h-24 w-24 drop-shadow-[0_4px_10px_rgba(0,0,0,0.10)]"
+          aria-hidden
+        >
+          <path
+            d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z"
+            fill="#FFFFFF"
           />
-          <AppleScribbleLogo className="relative h-32 w-32 drop-shadow-[0_6px_18px_rgba(0,0,0,0.12)]" />
-        </div>
+        </svg>
 
-        {/* Bottom store tag */}
-        <p className="pb-1 text-[9px] font-medium uppercase tracking-[0.3em] text-[#86868B]">
-          App Store · iTunes
+        {/* Small "Apple Gift Card" wordmark in the bottom-right, matching
+            the supplied reference. Light weight, slightly tracked. */}
+        <p
+          className="absolute bottom-4 right-5 text-[11px] font-normal text-white/90"
+          style={{ letterSpacing: "0.5px" }}
+        >
+          Apple Gift Card
         </p>
       </div>
     </CardShell>
-  );
-}
-
-function AppleScribbleLogo({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden>
-      <defs>
-        {/* Smooth diagonal rainbow gradient that replaces the original
-            block-color patches — one continuous flow of color across
-            the silhouette for a polished, premium look. */}
-        <linearGradient id="apple-rainbow" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FF5E8A" />
-          <stop offset="22%" stopColor="#FF8A5C" />
-          <stop offset="42%" stopColor="#FFD24D" />
-          <stop offset="62%" stopColor="#3DD9A6" />
-          <stop offset="82%" stopColor="#3AA7FF" />
-          <stop offset="100%" stopColor="#8A5CFF" />
-        </linearGradient>
-        {/* Glossy top-to-bottom sheen — white highlight at the top,
-            subtle darkening at the bottom — to give the flat silhouette
-            dimensional depth. */}
-        <linearGradient id="apple-shine" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.50)" />
-          <stop offset="45%" stopColor="rgba(255,255,255,0.08)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.12)" />
-        </linearGradient>
-        <clipPath id="apple-clip">
-          <path d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z" />
-        </clipPath>
-      </defs>
-
-      {/* Rainbow gradient fill covering the entire apple silhouette */}
-      <g clipPath="url(#apple-clip)">
-        <rect x="0" y="0" width="100" height="100" fill="url(#apple-rainbow)" />
-        {/* Glossy highlight overlay for dimension */}
-        <rect x="0" y="0" width="100" height="100" fill="url(#apple-shine)" />
-      </g>
-
-      {/* Clean inner highlight along the silhouette edge */}
-      <path
-        d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z"
-        fill="none"
-        stroke="rgba(255,255,255,0.35)"
-        strokeWidth="1.2"
-      />
-      {/* Subtle outer edge so the logo reads cleanly on a white card */}
-      <path
-        d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z"
-        fill="none"
-        stroke="rgba(0,0,0,0.08)"
-        strokeWidth="1"
-      />
-    </svg>
   );
 }
 
@@ -448,16 +384,59 @@ function GooglePlayCard() {
   );
 }
 
-/* MOBILE HERO — a centered fan of the three real card designs, spread
-   the way you'd fan out banknotes in your hand: the middle card stays
-   upright while the outer two tilt away left and right from a shared
-   bottom pivot. The whole fan sits in the middle of the hero and stays
-   fully inside the screen on every phone width.
+/* MOBILE HERO — a floating, draggable fan of the three real card
+   designs. Rendered `position: fixed` so the widget escapes the hero
+   section's `overflow-hidden` and can be moved around the visible
+   viewport (not just inside the hero). It starts centered in the lower
+   portion of the viewport — sitting in the empty blue area below the
+   hero text content, above the statistics panel.
 
-   Tapping anywhere on the fan toggles between the money-fan spread
-   (default) and a neat stack, then back again. */
+   Layered transform architecture (each layer owns ONE transform so they
+   don't conflict, which was the cause of the original "lower-right
+   corner" drift):
+     • Outer wrapper div  — position:fixed + left/top + translate(-50%,-50%)
+                            for base centering. No Framer Motion animation
+                            here, so the centering transform is never
+                            overridden.
+     • Drag motion.div    — style={{ x: dragX, y: dragY }} for the drag
+                            offset (manual, via pointer events).
+     • Float motion.div   — animate={{ y: [0,-6,0] }} for the gentle
+                            hovering bob.
+     • Card fan container — 280×190 box that holds the three cards.
+     • Per-card wrapper   — absolute left-1/2 top-1/2 + translate(-50%,-50%)
+                            (CSS, on a non-animated div) so the anchor
+                            centering survives.
+     • Per-card motion.div — animate={cardNTarget} for spread/close.
+     • Card content div    — scale(0.38) for sizing.
+
+   Interactions:
+     • Short tap         → toggles the card fan between spread and stacked.
+     • Press+hold (380ms)→ arms drag mode (no spread/close fired).
+     • Hold+move         → drags the entire widget as one object.
+     • Release           → widget stays where it was released.
+     • Reload            → widget returns to the centered default
+                           (drag offsets are React state, not persisted).
+
+   No instructional UI is rendered — the gestures are discoverable. */
 export function Hero3DMobilePreview() {
   const [clickCount, setClickCount] = useState(0);
+  // isDragArmed: long-press timer has fired for the current gesture.
+  // isPointerDown: a pointer is currently down on the widget (used to
+  //                gate pointermove handling).
+  const [isDragArmed, setIsDragArmed] = useState(false);
+  const [isPointerDown, setIsPointerDown] = useState(false);
+
+  // Drag offset (MotionValues — NOT persisted to localStorage or any
+  // backend). They reset to 0 on every page load, which is the
+  // intended "reload resets to center" behaviour.
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
+
+  const longPressTimer = useRef<number | null>(null);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  // Snapshot of the drag offset at the moment the current gesture
+  // started, so we can compute the new offset as start + delta.
+  const dragStartOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const isSpread = clickCount % 2 === 0;
 
@@ -482,57 +461,184 @@ export function Hero3DMobilePreview() {
 
   const spring = { type: "spring" as const, stiffness: 220, damping: 22, mass: 0.8 };
 
-  return (
-    <div className="relative">
-      <div
-        className="relative mx-auto flex h-[230px] w-full max-w-sm items-center justify-center"
-        style={{ perspective: 1400 }}
-        onClick={() => setClickCount((c) => c + 1)}
-      >
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/25 blur-[80px]"
-          aria-hidden
-        />
+  // --- Long-press + drag tuning -------------------------------------------
+  const LONG_PRESS_MS = 380;       // hold duration before drag mode arms
+  const MOVE_THRESHOLD_PX = 8;     // movement beyond this cancels long-press
+  const EDGE_MARGIN_PX = 60;       // keep at least this much of the widget
+                                   // visible at any viewport edge during drag
+  const WIDGET_W = 280;            // card fan container width
+  const WIDGET_H = 190;            // card fan container height
 
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // Clamp the drag offset so the widget can never be dragged completely
+  // off-screen — at least EDGE_MARGIN_PX of it stays visible at any
+  // edge, so the user can always grab it again.
+  const clampDrag = (dx: number, dy: number) => {
+    if (typeof window === "undefined") return { x: dx, y: dy };
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // Widget starts centered horizontally (left:50%) and at 70% of
+    // viewport height (top:70%). Compute the allowed drag range so
+    // that the widget's bounding box keeps at least EDGE_MARGIN_PX on
+    // the screen at all times.
+    //   widget right edge = vw/2 + dx + WIDGET_W/2  →  ≥ EDGE_MARGIN_PX
+    //   widget left  edge = vw/2 + dx - WIDGET_W/2  →  ≤ vw - EDGE_MARGIN_PX
+    //   widget bottom edge = vh*0.7 + dy + WIDGET_H/2  →  ≥ EDGE_MARGIN_PX
+    //   widget top    edge = vh*0.7 + dy - WIDGET_H/2  →  ≤ vh - EDGE_MARGIN_PX
+    const xLower = EDGE_MARGIN_PX - vw / 2 - WIDGET_W / 2;
+    const xUpper = vw - EDGE_MARGIN_PX - vw / 2 + WIDGET_W / 2;
+    const yLower = EDGE_MARGIN_PX - vh * 0.7 - WIDGET_H / 2;
+    const yUpper = vh - EDGE_MARGIN_PX - vh * 0.7 + WIDGET_H / 2;
+    const clamp = (v: number, lo: number, hi: number) =>
+      Math.max(lo, Math.min(hi, v));
+    return {
+      x: clamp(dx, xLower, xUpper),
+      y: clamp(dy, yLower, yUpper),
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!e.isPrimary) return;
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    dragStartOffset.current = { x: dragX.get(), y: dragY.get() };
+    setIsPointerDown(true);
+    setIsDragArmed(false);
+    // Capture the pointer so we keep receiving move/up events even if
+    // the finger leaves the widget bounds while dragging.
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    clearLongPressTimer();
+    longPressTimer.current = window.setTimeout(() => {
+      // Long-press fired without significant movement → arm drag mode.
+      setIsDragArmed(true);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!pointerStart.current || !isPointerDown || !e.isPrimary) return;
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (isDragArmed) {
+      // Drag mode — update offset, with viewport clamping so the widget
+      // can't be dragged completely off-screen.
+      const { x, y } = clampDrag(dragStartOffset.current.x + dx, dragStartOffset.current.y + dy);
+      dragX.set(x);
+      dragY.set(y);
+    } else if (dist > MOVE_THRESHOLD_PX) {
+      // Not armed yet and the user moved more than the threshold → this
+      // is a swipe/scroll attempt, not a long-press. Cancel the timer
+      // so it can't fire later and steal the gesture.
+      clearLongPressTimer();
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    clearLongPressTimer();
+    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+
+    if (!isDragArmed && pointerStart.current) {
+      // No long-press fired — was this a tap?
+      const dx = e.clientX - pointerStart.current.x;
+      const dy = e.clientY - pointerStart.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < MOVE_THRESHOLD_PX) {
+        // Tap → toggle spread/close.
+        setClickCount((c) => c + 1);
+      }
+    }
+    // If isDragArmed was true, the user dragged — do NOT fire the tap,
+    // so release-after-drag doesn't accidentally toggle the cards.
+
+    setIsDragArmed(false);
+    setIsPointerDown(false);
+    pointerStart.current = null;
+  };
+
+  const handlePointerCancel = () => {
+    clearLongPressTimer();
+    setIsDragArmed(false);
+    setIsPointerDown(false);
+    pointerStart.current = null;
+  };
+
+  return (
+    // Outer wrapper — `position: fixed` so the widget escapes the hero
+    // section's `overflow-hidden` and can be dragged anywhere on the
+    // visible page. Centered horizontally, positioned in the lower
+    // portion of the viewport (sitting in the empty blue hero area).
+    // `touch-action: none` is scoped to this widget only — touches that
+    // start anywhere else on the page still scroll normally.
+    <div
+      style={{
+        position: "fixed",
+        left: "50%",
+        top: "70%",
+        transform: "translate(-50%, -50%)",
+        zIndex: 40,
+        touchAction: "none",
+      }}
+    >
+      {/* Drag layer — owns the drag offset (x, y). Pointer events for
+          long-press detection + drag are attached here, on the same
+          element that owns the drag transform. */}
+      <motion.div
+        style={{ x: dragX, y: dragY }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+      >
+        {/* Float layer — owns the gentle hovering bob. A separate
+            motion.div so the y-animation doesn't fight the drag x/y. */}
         <motion.div
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           className="relative h-[190px] w-[280px]"
         >
-          <motion.div
-            className="absolute left-1/2 top-1/2 cursor-pointer"
-            animate={card3Target}
-            transition={spring}
-            style={{ transform: "translate(-50%, -50%)" }}
-          >
-            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-              <GooglePlayCard />
-            </div>
-          </motion.div>
+          {/* Soft glow behind the cards */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/25 blur-[80px]"
+            aria-hidden
+          />
 
-          <motion.div
-            className="absolute left-1/2 top-1/2 cursor-pointer"
-            animate={card2Target}
-            transition={spring}
-            style={{ transform: "translate(-50%, -50%)" }}
-          >
-            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-              <AmazonCard />
-            </div>
-          </motion.div>
+          {/* Each card wrapper is a NON-animated div that owns the
+              `translate(-50%, -50%)` centering. Previously this was on
+              the motion.div itself, where Framer Motion's animate
+              overwrote it and pushed cards to the lower-right of their
+              anchor — putting the wrapper here keeps the centering
+              intact regardless of what the inner motion.div animates. */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <motion.div animate={card3Target} transition={spring}>
+              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+                <GooglePlayCard />
+              </div>
+            </motion.div>
+          </div>
 
-          <motion.div
-            className="absolute left-1/2 top-1/2 cursor-pointer"
-            animate={card1Target}
-            transition={spring}
-            style={{ transform: "translate(-50%, -50%)" }}
-          >
-            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-              <AppleCard />
-            </div>
-          </motion.div>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <motion.div animate={card2Target} transition={spring}>
+              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+                <AmazonCard />
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <motion.div animate={card1Target} transition={spring}>
+              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+                <AppleCard />
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

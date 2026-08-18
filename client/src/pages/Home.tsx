@@ -227,18 +227,15 @@ function Hero({
             </span>
           </motion.div>
 
-          {/* Mobile/tablet card preview — the full interactive 3D spread is
-              desktop-only (lg:block below), so smaller screens get a
-              lightweight static preview of the real card designs instead
-              of nothing at all. */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-10 lg:hidden"
-          >
-            <Hero3DMobilePreview />
-          </motion.div>
+          {/* NOTE: The mobile card preview used to live inside this text
+              column flow (a `<motion.div className="mt-10 lg:hidden">`
+              wrapping `<Hero3DMobilePreview />`). That made the column
+              taller than the viewport on phones, which — combined with
+              the hero section's `overflow-hidden` — pushed the cards
+              below the visible area. The mobile preview is now rendered
+              as a `position: fixed` floating widget further down (next
+              to the desktop `<Hero3D />`), so it escapes the hero clip
+              and floats in the empty blue area on its own. */}
         </div>
       </div>
 
@@ -253,6 +250,15 @@ function Hero({
       >
         <Hero3D />
       </motion.div>
+
+      {/* Mobile-only floating cards widget — `position: fixed` inside
+          Hero3DMobilePreview itself, so it escapes the hero's
+          `overflow-hidden` and floats above page content. The wrapper
+          here just gates visibility by breakpoint (lg:hidden) so the
+          widget is never mounted on desktop. */}
+      <div className="lg:hidden">
+        <Hero3DMobilePreview />
+      </div>
 
       {/* Scroll indicator */}
       <motion.div
