@@ -18,7 +18,6 @@ import { Header } from "@/components/Header";
 import { Hero3D, Hero3DMobilePreview } from "@/components/Hero3D";
 
 import { RateCalculator } from "@/components/RateCalculator";
-import { UploadEditSave } from "@/components/UploadEditSave";
 import { Footer } from "@/components/Footer";
 
 import { AdminLoginModal } from "@/components/AdminLoginModal";
@@ -80,8 +79,6 @@ export default function Home() {
           selectedSlug={selectedSlug}
           onSelectSlug={setSelectedSlug}
         />
-        <CardsSection />
-
         <ServicesSection />
         <WhyUs />
         <AboutSection siteImages={siteImages} whatsappLink={whatsappLink} />
@@ -356,33 +353,9 @@ function HowItWorks() {
   );
 }
 
-/* CARDS SECTION */
-function CardsSection() {
-  return (
-    <section
-      id="cards"
-      className="relative bg-gradient-to-b from-white to-[#F4F7FC] py-28 sm:py-36"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <AnimatedSection>
-          <div className="mx-auto mb-16 max-w-2xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#0047AB]">
-              Manage cards
-            </p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0A1224] sm:text-4xl lg:text-5xl">
-              Upload. Edit. Save.
-            </h2>
-            <p className="mt-4 text-base text-[#6B7384] sm:text-lg">
-              Pick a card, drop in a new image, rename the brand, and hit save. Changes go live instantly.
-            </p>
-          </div>
-        </AnimatedSection>
-
-        <UploadEditSave />
-      </div>
-    </section>
-  );
-}
+/* CARDS SECTION — removed per request. The gift card grid is no longer
+   rendered on the public home page. The dashboard at /dashboard still has
+   the full create / edit / save admin UI. */
 
 /* SERVICES */
 function ServicesSection() {
