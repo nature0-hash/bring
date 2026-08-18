@@ -173,7 +173,11 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
       {/* Card art — real brand-styled gift-card face.
           Slightly shorter on mobile so two columns fit cleanly. */}
       <div className="relative h-28 overflow-hidden sm:h-44">
-        <BrandCardArt slug={card.slug} brand={card.brand} />
+        {card.imageUrl ? (
+          <img src={card.imageUrl} alt={card.brand} className="h-full w-full object-cover" />
+        ) : (
+          <BrandCardArt slug={card.slug} brand={card.brand} />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
