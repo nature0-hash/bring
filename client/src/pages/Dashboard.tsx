@@ -548,6 +548,10 @@ function CardsTab({
   onRefresh: () => void;
 }) {
   const { t } = useLanguage();
+  // selectedId may come from a freshly-created card (whose id was coerced
+  // to Number by the API) or from a card already in the list (also a
+  // Number after the API serialize() fix). Comparisons below use
+  // Number(...) defensively so a stray string id never breaks selection.
   const [selectedId, setSelectedId] = useState<number | "new" | null>(null);
   const [brand, setBrand] = useState("");
   const [slug, setSlug] = useState("");
@@ -559,7 +563,10 @@ function CardsTab({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const selected = typeof selectedId === "number" ? cards.find((c) => c.id === selectedId) ?? null : null;
+  const selected =
+    typeof selectedId === "number"
+      ? cards.find((c) => Number(c.id) === Number(selectedId)) ?? null
+      : null;
   const isNew = selectedId === "new";
 
   useEffect(() => {
@@ -592,6 +599,9 @@ function CardsTab({
       toast.error("Brand name is required.");
       return;
     }
+    // imageUrl is intentionally optional — admins can save the card first
+    // and upload an image afterwards. The public catalog renders a clean
+    // neutral placeholder when no image is set, so we never block saving.
     setSaving(true);
     try {
       if (isNew) {
@@ -604,12 +614,10 @@ function CardsTab({
           category: category || undefined,
         });
         toast.success(`${card.brand} created.`);
-        setSelectedId(card.id);
+        setSelectedId(Number(card.id));
       } else if (selected) {
-        const finalSlug = slug.trim().toLowerCase().replace(/\s+/g, "-") || selected.slug;
-        const { card } = await updateGiftCard(selected.id, {
+        const { card } = await updateGiftCard(Number(selected.id), {
           brand: brand.trim(),
-          slug: finalSlug,
           imageUrl: imageUrl.trim(),
           category: category || undefined,
           baseRate: pct / 100,
@@ -631,7 +639,7 @@ function CardsTab({
     if (!confirm(`Delete "${selected.brand}"? This cannot be undone.`)) return;
     setDeleting(true);
     try {
-      await deleteGiftCard(selected.id);
+      await deleteGiftCard(Number(selected.id));
       toast.success(`${selected.brand} deleted.`);
       setSelectedId(null);
       onRefresh();
@@ -672,9 +680,9 @@ function CardsTab({
                 {cards.map((card) => (
                   <button
                     key={card.id}
-                    onClick={() => setSelectedId(card.id)}
+                    onClick={() => setSelectedId(Number(card.id))}
                     className={`flex w-full items-center justify-between px-6 py-4 text-left transition-colors ${
-                      selectedId === card.id ? "bg-[#F4F7FC]" : "hover:bg-[#F4F7FC]/60"
+                      selectedId === Number(card.id) ? "bg-[#F4F7FC]" : "hover:bg-[#F4F7FC]/60"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -746,17 +754,18 @@ function CardsTab({
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">{isNew ? "Slug (URL id, optional)" : "Slug (URL id)"}</label>
-                  <input
-                    type="text"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    placeholder={isNew ? "auto-generated from brand" : "e.g. steam-wallet"}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
-                  />
-                  {!isNew && <p className="mt-1 text-xs text-[#6B7384]">Changing this updates the URL path for this card.</p>}
-                </div>
+                {isNew && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Slug (URL id, optional)</label>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value)}
+                      placeholder="auto-generated from brand"
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Category</label>

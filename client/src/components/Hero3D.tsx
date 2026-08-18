@@ -239,29 +239,35 @@ function CardShell({ children, background, withWatermark = true }: CardProps) {
   );
 }
 
-/* APPLE GIFT CARD — clean white card with the colorful scribble Apple
-   logo centered. The logo is the dominant visual element, sized to feel
-   like the card's identity rather than an overlay. A soft chromatic glow
-   behind the logo creates visual integration with the white surface.
-   Vertical rhythm uses deliberate spacing for a premium, balanced feel. */
+/* APPLE GIFT CARD — clean white card with a colorful Apple logo
+   composed as the dominant focal element. The logo sits in a balanced
+   three-row vertical rhythm (label → logo → store tag) and is visually
+   integrated into the white card via a soft color halo that bleeds its
+   rainbow palette into the surrounding surface, plus a quiet background
+   wash. The result reads as one properly designed Apple gift card rather
+   than a white card with a logo pasted on top. */
 function AppleCard() {
   return (
     <CardShell
       background={
         <>
           <div className="absolute inset-0 bg-white" />
+          {/* Quiet background wash that echoes the logo's rainbow palette
+              so the white card feels like an extension of the artwork,
+              not a neutral frame around it. */}
           <div
-            className="absolute inset-0 opacity-50"
+            className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(circle at 50% 48%, rgba(91,134,229,0.07), transparent 55%), radial-gradient(circle at 80% 20%, rgba(255,200,220,0.18), transparent 50%), radial-gradient(circle at 20% 80%, rgba(200,220,255,0.18), transparent 50%)",
+                "radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255,120,180,0.10), transparent 65%), radial-gradient(ellipse 50% 50% at 22% 30%, rgba(120,200,255,0.10), transparent 65%), radial-gradient(ellipse 50% 50% at 78% 75%, rgba(255,210,120,0.10), transparent 65%)",
             }}
           />
         </>
       }
     >
-      <div className="flex h-full flex-col items-center text-center">
-        <div className="pt-2.5">
+      <div className="flex h-full flex-col items-center justify-between py-1 text-center">
+        {/* Top label */}
+        <div className="pt-1">
           <p className="font-display text-[20px] font-normal leading-tight text-[#1D1D1F]">
             The gift card for
           </p>
@@ -269,19 +275,26 @@ function AppleCard() {
             everything Apple.
           </p>
         </div>
-        <div className="relative flex flex-1 items-center justify-center">
+
+        {/* Apple logo — dominant focal element. A soft color halo behind
+            it bridges the rainbow fill with the white card surface so the
+            artwork feels integrated rather than pasted on. The logo is
+            sized to read as the hero of the card while leaving generous
+            breathing room above and below. */}
+        <div className="relative flex items-center justify-center">
           <div
-            className="pointer-events-none absolute h-36 w-36 rounded-full"
+            className="pointer-events-none absolute inset-0 -m-6 rounded-full opacity-70 blur-2xl"
             style={{
               background:
-                "radial-gradient(circle, rgba(91,134,229,0.18) 0%, rgba(255,105,180,0.12) 35%, rgba(255,215,0,0.08) 60%, transparent 80%)",
-              filter: "blur(18px)",
-              opacity: 0.7,
+                "radial-gradient(circle at 30% 30%, rgba(255,105,180,0.45), transparent 55%), radial-gradient(circle at 70% 30%, rgba(255,165,90,0.40), transparent 55%), radial-gradient(circle at 30% 70%, rgba(120,200,255,0.40), transparent 55%), radial-gradient(circle at 70% 70%, rgba(150,90,255,0.40), transparent 55%)",
             }}
+            aria-hidden
           />
-          <AppleScribbleLogo className="relative h-[118px] w-[118px]" />
+          <AppleScribbleLogo className="relative h-32 w-32 drop-shadow-[0_6px_18px_rgba(0,0,0,0.12)]" />
         </div>
-        <p className="pb-2.5 text-[9px] font-medium uppercase tracking-[0.25em] text-[#86868B]">
+
+        {/* Bottom store tag */}
+        <p className="pb-1 text-[9px] font-medium uppercase tracking-[0.3em] text-[#86868B]">
           App Store · iTunes
         </p>
       </div>
@@ -293,36 +306,45 @@ function AppleScribbleLogo({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
       <defs>
+        {/* Smooth diagonal rainbow gradient that replaces the original
+            block-color patches — one continuous flow of color across
+            the silhouette for a polished, premium look. */}
+        <linearGradient id="apple-rainbow" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FF5E8A" />
+          <stop offset="22%" stopColor="#FF8A5C" />
+          <stop offset="42%" stopColor="#FFD24D" />
+          <stop offset="62%" stopColor="#3DD9A6" />
+          <stop offset="82%" stopColor="#3AA7FF" />
+          <stop offset="100%" stopColor="#8A5CFF" />
+        </linearGradient>
+        {/* Glossy top-to-bottom sheen — white highlight at the top,
+            subtle darkening at the bottom — to give the flat silhouette
+            dimensional depth. */}
+        <linearGradient id="apple-shine" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.50)" />
+          <stop offset="45%" stopColor="rgba(255,255,255,0.08)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.12)" />
+        </linearGradient>
         <clipPath id="apple-clip">
           <path d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z" />
         </clipPath>
       </defs>
+
+      {/* Rainbow gradient fill covering the entire apple silhouette */}
+      <g clipPath="url(#apple-clip)">
+        <rect x="0" y="0" width="100" height="100" fill="url(#apple-rainbow)" />
+        {/* Glossy highlight overlay for dimension */}
+        <rect x="0" y="0" width="100" height="100" fill="url(#apple-shine)" />
+      </g>
+
+      {/* Clean inner highlight along the silhouette edge */}
       <path
         d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z"
-        fill="#F5F5F7"
+        fill="none"
+        stroke="rgba(255,255,255,0.35)"
+        strokeWidth="1.2"
       />
-      <g clipPath="url(#apple-clip)" stroke="none">
-        {/* Full-bleed color patches — together they cover the entire
-            0–100 viewBox so every pixel inside the apple silhouette is
-            painted and no grey base shows through anywhere. */}
-        <rect x="0" y="0" width="100" height="100" fill="#5B86E5" />
-        <rect x="0" y="0" width="55" height="34" fill="#00CED1" />
-        <rect x="40" y="0" width="60" height="30" fill="#FF69B4" />
-        <rect x="0" y="28" width="42" height="30" fill="#FFD700" />
-        <rect x="36" y="26" width="38" height="28" fill="#ADFF2F" />
-        <rect x="66" y="24" width="34" height="34" fill="#FF6347" />
-        <rect x="0" y="52" width="46" height="26" fill="#FF1493" />
-        <rect x="40" y="50" width="36" height="26" fill="#00CED1" />
-        <rect x="70" y="52" width="30" height="26" fill="#FFD700" />
-        <rect x="0" y="72" width="52" height="28" fill="#8A2BE2" />
-        <rect x="46" y="70" width="54" height="30" fill="#FF6347" />
-      </g>
-      <g clipPath="url(#apple-clip)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" fill="none">
-        <path d="M22 28 Q 50 22, 80 28" />
-        <path d="M22 45 Q 50 39, 80 45" />
-        <path d="M22 60 Q 50 54, 80 60" />
-        <path d="M22 75 Q 50 69, 80 75" />
-      </g>
+      {/* Subtle outer edge so the logo reads cleanly on a white card */}
       <path
         d="M74.05 84.28c-3.98 3.85-8.05 3.49-11.92 1.74-4.23-1.83-8.09-1.95-12.56 0-5.59 2.38-8.55 1.69-11.88-1.74C9.79 62.25 12.51 30.59 35.05 30.31c5.35.07 9.09 2.96 12.18 3.21 4.66-.97 9.16-3.79 14.07-3.43 5.96.48 10.46 2.92 13.45 7.31-12.36 7.61-9.44 24.18 1.94 28.55-2.30 5.99-5.31 11.97-10.18 16.18zM47.03 30.25c-.59-9.06 6.65-16.46 14.74-17.21 1.16 9.49-9.20 17.16-14.74 17.21z"
         fill="none"

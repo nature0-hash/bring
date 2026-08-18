@@ -95,7 +95,10 @@ export function fetchAllGiftCards(): Promise<GiftCard[]> {
 export function createGiftCard(data: {
   brand: string;
   slug: string;
-  imageUrl: string;
+  // imageUrl is optional — admin can save the card first and upload the
+  // image afterwards. An empty string is stored when no image is set, and
+  // the public catalog renders a clean neutral placeholder in that case.
+  imageUrl?: string;
   baseRate: number;
   category?: string;
 }): Promise<{ card: GiftCard }> {
@@ -107,7 +110,7 @@ export function createGiftCard(data: {
 
 export function updateGiftCard(
   id: number,
-  data: Partial<{ brand: string; slug: string; imageUrl: string; category: string; isActive: boolean; sortOrder: number; baseRate: number }>
+  data: Partial<{ brand: string; imageUrl: string; category: string; isActive: boolean; sortOrder: number; baseRate: number }>
 ): Promise<{ card: GiftCard }> {
   return request<{ card: GiftCard }>("/api/cards", {
     method: "PATCH",

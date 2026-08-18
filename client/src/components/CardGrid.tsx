@@ -11,10 +11,52 @@ interface CardGridProps {
   onSelectCard?: (slug: string) => void;
 }
 
-/** Universal default denominations shown on every card.
- *  The actual tradeable amounts come from the admin-configured
- *  card_rates (Local Rates) — these chips are just visual hints. */
-const DEFAULT_DENOMINATIONS = { values: [10, 25, 50, 100, 200] as number[], custom: false };
+/**
+ * Real-world purchasable denominations per brand: the single-card values
+ * a customer can actually buy in stores / online. "custom" marks brands
+ * that also sell variable-load cards above the listed values.
+ *
+ * This tells visitors what card values exist (e.g. you can't buy one
+ * physical $300 Apple card, but Apple does sell custom loads).
+ *
+ * NOTE: This lookup is purely for the denomination chips shown on the
+ * public catalog. It does NOT control the card image — the image comes
+ * from the admin-controlled `card.imageUrl` field stored in the
+ * database (set via Dashboard → Gift Cards). When a card has no image
+ * configured, a clean neutral placeholder is rendered instead.
+ */
+const BRAND_DENOMINATIONS: Record<string, { values: number[]; custom?: boolean }> = {
+  steam:         { values: [5, 10, 20, 25, 50, 100] },
+  apple:         { values: [25, 50, 100, 200], custom: true },
+  itunes:        { values: [25, 50, 100, 200], custom: true },
+  amazon:        { values: [10, 25, 50, 100, 200, 500], custom: true },
+  "google-play": { values: [10, 15, 25, 50, 100, 200] },
+  xbox:          { values: [15, 25, 50, 100] },
+  playstation:   { values: [25, 50, 75, 100, 200] },
+  netflix:       { values: [15, 25, 30, 50, 100] },
+  spotify:       { values: [10, 30, 60] },
+  ebay:          { values: [25, 50, 100, 150, 200] },
+  walmart:       { values: [25, 50, 100, 200, 500], custom: true },
+  target:        { values: [10, 25, 50, 100, 500], custom: true },
+  "best-buy":    { values: [25, 50, 100, 200, 500] },
+  sephora:       { values: [10, 25, 50, 100, 250] },
+  nike:          { values: [25, 50, 100, 200, 250] },
+  adidas:        { values: [10, 25, 50, 100, 250] },
+  roblox:        { values: [10, 25, 50, 100] },
+  discord:       { values: [10, 25, 50, 100] },
+  "epic-games":  { values: [10, 25, 50, 100] },
+  epic:          { values: [10, 25, 50, 100] },
+  uber:          { values: [15, 25, 50, 100, 500], custom: true },
+  airbnb:        { values: [25, 50, 100, 200, 500], custom: true },
+  visa:          { values: [25, 50, 100, 200, 500] },
+  mastercard:    { values: [25, 50, 100, 200, 500] },
+  amex:          { values: [25, 50, 100, 200, 500] },
+  "american-express": { values: [25, 50, 100, 200, 500] },
+  "razer-gold":  { values: [10, 20, 25, 50, 100] },
+  razer:         { values: [10, 20, 25, 50, 100] },
+};
+
+const DEFAULT_DENOMINATIONS = { values: [25, 50, 100, 200, 500] as number[], custom: false };
 
 export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
   const [query, setQuery] = useState("");
@@ -120,7 +162,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 }
 
 function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
-  const denoms = DEFAULT_DENOMINATIONS;
+  const denoms = BRAND_DENOMINATIONS[card.slug] ?? DEFAULT_DENOMINATIONS;
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -133,15 +175,33 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
       }}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm hover:shadow-[0_20px_50px_-15px_rgba(0,71,171,0.25)] hover:border-[#0047AB]/30 transition-all duration-300"
     >
-      {/* Card art — real brand-styled gift-card face.
-          Slightly shorter on mobile so two columns fit cleanly. */}
+      {/* Card art — comes 100% from the admin-controlled `card.imageUrl`
+          stored in the database (Dashboard → Gift Cards). No hardcoded
+          brand SVG is ever substituted, so an admin uploading a new image
+          is the only thing that controls what appears here. When a card
+          has no image yet, a clean neutral placeholder is shown so the
+          tile layout never breaks and never displays a broken-image
+          icon. Slightly shorter on mobile so two columns fit cleanly. */}
       <div className="relative h-28 overflow-hidden sm:h-44">
         {card.imageUrl ? (
-          <img src={card.imageUrl} alt={card.brand} className="h-full w-full object-cover" />
+          <img
+            src={card.imageUrl}
+            alt={card.brand}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-            <ImageOff className="h-8 w-8 text-slate-300 sm:h-10 sm:w-10" />
-            <span className="mt-1 text-[10px] font-medium text-slate-400 sm:text-xs">No image</span>
+          <div
+            className="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center"
+            style={{
+              background:
+                "linear-gradient(135deg, #F4F7FC 0%, #E6EEFB 100%)",
+            }}
+          >
+            <ImageOff className="h-6 w-6 text-[#9CA3AF] sm:h-7 sm:w-7" aria-hidden />
+            <span className="line-clamp-2 font-display text-[10px] font-semibold uppercase tracking-wider text-[#6B7384] sm:text-xs">
+              {card.brand}
+            </span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

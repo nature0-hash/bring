@@ -1,9 +1,15 @@
 /**
  * /api/cards
  * GET    — public: all active gift cards. ?includeInactive=1 (master only) returns all.
- * POST   — master: create a new gift card. Body: { brand, slug, imageUrl, baseRate, category? }
- * PATCH  — master: update a card's brand/image/category/slug. Body: { id, ...fields }
- * DELETE — master: delete a card. Query: ?id=
+ * POST   — master: create a new gift card. Body: { brand, slug, imageUrl?, baseRate, category? }
+ * PATCH  — master: update a card's brand/image/category/slug/isActive/sortOrder/baseRate. Body: { id, ...fields }
+ * DELETE — master: delete a card. Query: ?id=  (FK card_rates.card_id has ON DELETE CASCADE,
+ *          so local-rate rows for this card are removed automatically by Postgres.)
+ *
+ * NOTE on ID types: Neon/Postgres returns BIGINT ids as JS strings to preserve
+ * precision. We coerce to Number in serialize() so the dashboard (which uses
+ * numeric ids in useState/find() comparisons) always sees a stable number.
+ * Gift card ids in this system are well within Number.MAX_SAFE_INTEGER.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { query, queryOne } from "./_lib/db.js";
@@ -21,9 +27,12 @@ interface CardRow {
   updated_at: string;
 }
 
+// Coerce BIGINT-as-string ids to Number. Gift card ids are far below
+// Number.MAX_SAFE_INTEGER, so this is safe and gives the frontend a
+// consistent numeric id for useState/find()/equality checks.
 function serialize(r: CardRow) {
   return {
-    id: r.id,
+    id: Number(r.id),
     brand: r.brand,
     slug: r.slug,
     imageUrl: r.image_url,
@@ -52,6 +61,9 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     const b = (req.body ?? {}) as Record<string, unknown>;
     const brand = String(b.brand ?? "").trim();
     const slug = String(b.slug ?? "").trim().toLowerCase().replace(/\s+/g, "-");
+    // imageUrl is optional on create — admins can save a card first and
+    // upload its image afterwards. The public catalog shows a clean
+    // neutral placeholder until an image is attached.
     const imageUrl = String(b.imageUrl ?? "").trim();
     const baseRate = Number(b.baseRate);
     const category = b.category ? String(b.category) : null;
@@ -82,7 +94,6 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     if (!existing) return error(res, "Card not found.", 404);
 
     const brand = b.brand !== undefined ? String(b.brand) : existing.brand;
-    const slug = b.slug !== undefined ? String(b.slug).trim().toLowerCase().replace(/\s+/g, "-") : existing.slug;
     const imageUrl = b.imageUrl !== undefined ? String(b.imageUrl) : existing.image_url;
     const category = b.category !== undefined ? String(b.category) : existing.category;
     const isActive = b.isActive !== undefined ? Boolean(b.isActive) : existing.is_active;
@@ -92,13 +103,10 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     if (b.baseRate !== undefined && (!Number.isFinite(baseRate) || baseRate < 0 || baseRate > 1)) {
       return error(res, "baseRate must be a number between 0 and 1.", 400);
     }
-    if (b.slug !== undefined && !slug) {
-      return error(res, "Slug cannot be empty.", 400);
-    }
 
     const updated = await queryOne<CardRow>`
       UPDATE gift_cards
-      SET brand = ${brand}, slug = ${slug}, image_url = ${imageUrl}, category = ${category},
+      SET brand = ${brand}, image_url = ${imageUrl}, category = ${category},
           is_active = ${isActive}, sort_order = ${sortOrder},
           base_rate = ${baseRate.toFixed(4)}, updated_at = NOW()
       WHERE id = ${id}
