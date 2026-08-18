@@ -88,6 +88,18 @@ export default function Home() {
         <TeamSection staff={staff} />
       </main>
 
+      {/* Mobile-only draggable cards widget — rendered at the top level
+          of Home (sibling of <main>) so its `position: absolute` document-
+          relative positioning is relative to this top-level div (which
+          spans the full document) and is NOT clipped by the hero section's
+          `overflow-hidden`. The widget can be dragged to any section of
+          the page and will scroll naturally with the document. The
+          `lg:hidden` wrapper gates visibility by breakpoint so the
+          widget is never mounted on desktop. */}
+      <div className="lg:hidden">
+        <Hero3DMobilePreview />
+      </div>
+
       <Footer />
     </div>
   );
@@ -232,10 +244,10 @@ function Hero({
               wrapping `<Hero3DMobilePreview />`). That made the column
               taller than the viewport on phones, which — combined with
               the hero section's `overflow-hidden` — pushed the cards
-              below the visible area. The mobile preview is now rendered
-              as a `position: fixed` floating widget further down (next
-              to the desktop `<Hero3D />`), so it escapes the hero clip
-              and floats in the empty blue area on its own. */}
+              below the visible area. The mobile widget is now rendered
+              at the top level of Home (outside the hero section) so its
+              `position: absolute` document-relative positioning isn't
+              clipped when the user drags it to other sections. */}
         </div>
       </div>
 
@@ -251,14 +263,7 @@ function Hero({
         <Hero3D />
       </motion.div>
 
-      {/* Mobile-only floating cards widget — `position: fixed` inside
-          Hero3DMobilePreview itself, so it escapes the hero's
-          `overflow-hidden` and floats above page content. The wrapper
-          here just gates visibility by breakpoint (lg:hidden) so the
-          widget is never mounted on desktop. */}
-      <div className="lg:hidden">
-        <Hero3DMobilePreview />
-      </div>
+      {/* (Mobile cards widget mount point moved to the top level of Home.) */}
 
       {/* Scroll indicator */}
       <motion.div

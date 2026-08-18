@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useLayoutEffect } from "react";
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
 import { ShieldCheck, Zap } from "lucide-react";
 
@@ -384,59 +384,91 @@ function GooglePlayCard() {
   );
 }
 
-/* MOBILE HERO — a floating, draggable fan of the three real card
-   designs. Rendered `position: fixed` so the widget escapes the hero
-   section's `overflow-hidden` and can be moved around the visible
-   viewport (not just inside the hero). It starts centered in the lower
-   portion of the viewport — sitting in the empty blue area below the
-   hero text content, above the statistics panel.
+/* MOBILE HERO — a draggable fan of the three real card designs.
+
+   Architecture (correcting the previous version's scrolling + viewport-
+   fixed-positioning problems):
+
+   • The widget is `position: absolute` at the document level (rendered
+     OUTSIDE the hero section in Home.tsx, so the hero's `overflow-hidden`
+     doesn't clip it when dragged to other sections). It scrolls
+     naturally with the page — it is NOT a permanent floating viewport
+     widget.
+
+   • Framer Motion `x` and `y` motion values control the widget's
+     document position via `transform: translate(x, y)`. The default
+     position (centered horizontally, ~70% down the viewport on initial
+     load, sitting in the hero's empty blue area) is computed in a
+     layout effect on mount. Reload re-runs this and resets the
+     position — no persistence anywhere.
+
+   Gesture handling (independent of page scroll):
+
+   • NO `touch-action: none` on the resting widget — the browser scrolls
+     normally even when the touch starts on the widget.
+
+   • NO `setPointerCapture` on pointerdown — the browser is free to
+     claim the gesture for scrolling if the user swipes.
+
+   • On pointerdown: start a 380ms long-press timer. If the user moves
+     more than 8px before it fires, cancel the timer (the user is
+     swiping/scrolling; the browser takes over and fires pointercancel).
+
+   • When the long-press timer fires (no movement for 380ms): arm drag
+     mode, capture the pointer (so subsequent pointermove events keep
+     firing on the widget even if the finger leaves its bounds), and
+     a non-passive `touchmove` listener now calls `preventDefault()` on
+     subsequent touchmove events so the browser stops scrolling while
+     the finger is dragging.
+
+   • pointermove (with drag armed): updates the widget's document
+     position by the finger delta. Page doesn't scroll during drag
+     (because of the preventDefault on touchmove).
+
+   • On pointerup: release pointer capture, end drag mode. If drag was
+     NOT armed and pointer barely moved, it's a tap → toggle
+     spread/close. If drag WAS armed, do NOT fire tap (so release-after-
+     drag doesn't accidentally toggle the cards).
 
    Layered transform architecture (each layer owns ONE transform so they
-   don't conflict, which was the cause of the original "lower-right
-   corner" drift):
-     • Outer wrapper div  — position:fixed + left/top + translate(-50%,-50%)
-                            for base centering. No Framer Motion animation
-                            here, so the centering transform is never
-                            overridden.
-     • Drag motion.div    — style={{ x: dragX, y: dragY }} for the drag
-                            offset (manual, via pointer events).
-     • Float motion.div   — animate={{ y: [0,-6,0] }} for the gentle
+   don't conflict — the original "lower-right corner" drift was caused
+   by Framer Motion's animate overwriting an inline transform):
+     • Outer motion.div  — `position: absolute` + Framer Motion x/y
+                            (document position + drag offset).
+     • Float motion.div  — `animate={{ y: [0,-6,0] }}` for the gentle
                             hovering bob.
-     • Card fan container — 280×190 box that holds the three cards.
-     • Per-card wrapper   — absolute left-1/2 top-1/2 + translate(-50%,-50%)
-                            (CSS, on a non-animated div) so the anchor
-                            centering survives.
-     • Per-card motion.div — animate={cardNTarget} for spread/close.
-     • Card content div    — scale(0.38) for sizing.
+     • Card fan          — 280×190 box that holds the three cards.
+     • Per-card wrapper  — `absolute left-1/2 top-1/2 -translate-x-1/2
+                            -translate-y-1/2` (CSS, on a non-animated div)
+                            so the centering survives.
+     • Per-card motion.div — `animate={cardNTarget}` for spread/close.
+     • Card content div   — `scale(0.38)` for sizing.
 
-   Interactions:
-     • Short tap         → toggles the card fan between spread and stacked.
-     • Press+hold (380ms)→ arms drag mode (no spread/close fired).
-     • Hold+move         → drags the entire widget as one object.
-     • Release           → widget stays where it was released.
-     • Reload            → widget returns to the centered default
-                           (drag offsets are React state, not persisted).
-
-   No instructional UI is rendered — the gestures are discoverable. */
+   No instructional UI is rendered. */
 export function Hero3DMobilePreview() {
   const [clickCount, setClickCount] = useState(0);
-  // isDragArmed: long-press timer has fired for the current gesture.
-  // isPointerDown: a pointer is currently down on the widget (used to
-  //                gate pointermove handling).
-  const [isDragArmed, setIsDragArmed] = useState(false);
-  const [isPointerDown, setIsPointerDown] = useState(false);
 
-  // Drag offset (MotionValues — NOT persisted to localStorage or any
-  // backend). They reset to 0 on every page load, which is the
-  // intended "reload resets to center" behaviour.
-  const dragX = useMotionValue(0);
-  const dragY = useMotionValue(0);
-
+  // Drag state — kept in refs so the non-passive touchmove listener
+  // (attached once via addEventListener) can read the current value
+  // from its stable closure, without needing a state update + re-render
+  // + listener reattachment on every gesture.
+  const isDragArmedRef = useRef(false);
+  const isPointerDownRef = useRef(false);
+  const pointerIdRef = useRef<number | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  // Snapshot of the drag offset at the moment the current gesture
-  // started, so we can compute the new offset as start + delta.
-  const dragStartOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  // Snapshot of the widget's document position at the moment the current
+  // gesture started, so we can compute the new position as start + delta.
+  const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Widget's document position. Initialized in a layout effect below
+  // (NOT in useMotionValue's initial arg) because we need window dims.
+  const widgetX = useMotionValue(0);
+  const widgetY = useMotionValue(0);
+
+  // Ref to the outer motion.div so we can attach the non-passive
+  // touchmove listener + call setPointerCapture/releasePointerCapture.
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   const isSpread = clickCount % 2 === 0;
 
@@ -463,11 +495,53 @@ export function Hero3DMobilePreview() {
 
   // --- Long-press + drag tuning -------------------------------------------
   const LONG_PRESS_MS = 380;       // hold duration before drag mode arms
-  const MOVE_THRESHOLD_PX = 8;     // movement beyond this cancels long-press
-  const EDGE_MARGIN_PX = 60;       // keep at least this much of the widget
-                                   // visible at any viewport edge during drag
-  const WIDGET_W = 280;            // card fan container width
-  const WIDGET_H = 190;            // card fan container height
+  const MOVE_THRESHOLD_PX = 8;    // movement beyond this cancels long-press
+  const EDGE_MARGIN_PX = 60;      // keep at least this much of the widget
+                                  // visible at any viewport edge during drag
+  const WIDGET_W = 280;           // card fan container width
+  const WIDGET_H = 190;           // card fan container height
+
+  // --- Initial document position (centered horizontally, in the empty
+  //     blue hero area below the text content). Computed in a layout
+  //     effect so the widget renders at the correct position on first
+  //     paint — no flash at (0, 0). Reload re-runs this and resets
+  //     the position. Not persisted anywhere. ---
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const x = window.innerWidth / 2 - WIDGET_W / 2;
+    const y = window.innerHeight * 0.7 - WIDGET_H / 2;
+    widgetX.set(x);
+    widgetY.set(y);
+  }, [widgetX, widgetY]);
+
+  // --- Non-passive touchmove listener (attached once). On real touch
+  //     devices, touchmove events continue firing on the original touch
+  //     target even after the finger leaves its bounds (per the Touch
+  //     Events spec) — so this listener reliably receives every touchmove
+  //     during the drag, regardless of pointer-capture quirks. It both:
+  //       • calls preventDefault() to stop the browser from scrolling
+  //         the page while the finger is dragging
+  //       • updates the widget's document position based on the finger
+  //         delta
+  //     Before drag is armed, this listener does nothing — the browser
+  //     scrolls normally. ---
+  useEffect(() => {
+    const el = widgetRef.current;
+    if (!el) return;
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragArmedRef.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch || !pointerStart.current) return;
+      const dx = touch.clientX - pointerStart.current.x;
+      const dy = touch.clientY - pointerStart.current.y;
+      const { x, y } = clampDocPos(dragStart.current.x + dx, dragStart.current.y + dy);
+      widgetX.set(x);
+      widgetY.set(y);
+    };
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", handleTouchMove);
+  }, []);
 
   const clearLongPressTimer = () => {
     if (longPressTimer.current !== null) {
@@ -476,74 +550,100 @@ export function Hero3DMobilePreview() {
     }
   };
 
-  // Clamp the drag offset so the widget can never be dragged completely
-  // off-screen — at least EDGE_MARGIN_PX of it stays visible at any
-  // edge, so the user can always grab it again.
-  const clampDrag = (dx: number, dy: number) => {
-    if (typeof window === "undefined") return { x: dx, y: dy };
+  // Clamp the widget's document position so the widget can never be
+  // dragged completely off-screen — at least EDGE_MARGIN_PX of it stays
+  // visible at any viewport edge, accounting for the current scroll.
+  // The widget is `position: absolute; top: 0; left: 0; transform:
+  // translate(x, y)`, so its bounding box's document position is:
+  //   left  edge = x              → must be ≤ vw - EDGE_MARGIN_PX
+  //   right edge = x + WIDGET_W   → must be ≥ EDGE_MARGIN_PX
+  //   top    edge = y             → must be ≤ sy + vh - EDGE_MARGIN_PX
+  //   bottom edge = y + WIDGET_H  → must be ≥ sy + EDGE_MARGIN_PX
+  // (where sy = current scrollY). This allows the widget to be dragged
+  // partially off-screen as long as EDGE_MARGIN_PX remains visible
+  // somewhere on the viewport — even when WIDGET_W > vw (which is the
+  // case on very narrow phones where the 280px widget is wider than
+  // the 320px viewport minus margins).
+  const clampDocPos = (x: number, y: number) => {
+    if (typeof window === "undefined") return { x, y };
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    // Widget starts centered horizontally (left:50%) and at 70% of
-    // viewport height (top:70%). Compute the allowed drag range so
-    // that the widget's bounding box keeps at least EDGE_MARGIN_PX on
-    // the screen at all times.
-    //   widget right edge = vw/2 + dx + WIDGET_W/2  →  ≥ EDGE_MARGIN_PX
-    //   widget left  edge = vw/2 + dx - WIDGET_W/2  →  ≤ vw - EDGE_MARGIN_PX
-    //   widget bottom edge = vh*0.7 + dy + WIDGET_H/2  →  ≥ EDGE_MARGIN_PX
-    //   widget top    edge = vh*0.7 + dy - WIDGET_H/2  →  ≤ vh - EDGE_MARGIN_PX
-    const xLower = EDGE_MARGIN_PX - vw / 2 - WIDGET_W / 2;
-    const xUpper = vw - EDGE_MARGIN_PX - vw / 2 + WIDGET_W / 2;
-    const yLower = EDGE_MARGIN_PX - vh * 0.7 - WIDGET_H / 2;
-    const yUpper = vh - EDGE_MARGIN_PX - vh * 0.7 + WIDGET_H / 2;
+    const sy = window.scrollY;
+    const xLower = EDGE_MARGIN_PX - WIDGET_W;   // widget's right edge = EDGE_MARGIN_PX
+    const xUpper = vw - EDGE_MARGIN_PX;          // widget's left edge = vw - EDGE_MARGIN_PX
+    const yLower = sy + EDGE_MARGIN_PX - WIDGET_H;
+    const yUpper = sy + vh - EDGE_MARGIN_PX;
     const clamp = (v: number, lo: number, hi: number) =>
       Math.max(lo, Math.min(hi, v));
     return {
-      x: clamp(dx, xLower, xUpper),
-      y: clamp(dy, yLower, yUpper),
+      x: clamp(x, xLower, xUpper),
+      y: clamp(y, yLower, yUpper),
     };
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!e.isPrimary) return;
     pointerStart.current = { x: e.clientX, y: e.clientY };
-    dragStartOffset.current = { x: dragX.get(), y: dragY.get() };
-    setIsPointerDown(true);
-    setIsDragArmed(false);
-    // Capture the pointer so we keep receiving move/up events even if
-    // the finger leaves the widget bounds while dragging.
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    dragStart.current = { x: widgetX.get(), y: widgetY.get() };
+    pointerIdRef.current = e.pointerId;
+    isPointerDownRef.current = true;
+    isDragArmedRef.current = false;
+    // NOTE: deliberately NOT calling setPointerCapture here — the browser
+    // must remain free to interpret this gesture as a normal scroll if the
+    // user starts swiping. Pointer capture is only claimed AFTER the
+    // long-press timer fires (see below).
     clearLongPressTimer();
     longPressTimer.current = window.setTimeout(() => {
       // Long-press fired without significant movement → arm drag mode.
-      setIsDragArmed(true);
+      isDragArmedRef.current = true;
+      // NOW we capture the pointer so subsequent pointermove events keep
+      // firing on the widget even if the finger leaves its bounds while
+      // dragging. The non-passive touchmove listener will also start
+      // calling preventDefault() now, so the browser stops scrolling.
+      if (widgetRef.current && pointerIdRef.current !== null) {
+        try {
+          widgetRef.current.setPointerCapture(pointerIdRef.current);
+        } catch {
+          /* ignore — pointer capture is best-effort */
+        }
+      }
     }, LONG_PRESS_MS);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!pointerStart.current || !isPointerDown || !e.isPrimary) return;
+    if (!pointerStart.current || !isPointerDownRef.current || !e.isPrimary) return;
     const dx = e.clientX - pointerStart.current.x;
     const dy = e.clientY - pointerStart.current.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (isDragArmed) {
-      // Drag mode — update offset, with viewport clamping so the widget
-      // can't be dragged completely off-screen.
-      const { x, y } = clampDrag(dragStartOffset.current.x + dx, dragStartOffset.current.y + dy);
-      dragX.set(x);
-      dragY.set(y);
+    if (isDragArmedRef.current) {
+      // Drag mode — update document position. Because the non-passive
+      // touchmove listener is calling preventDefault(), the page is NOT
+      // scrolling during drag, so viewport delta == document delta.
+      const { x, y } = clampDocPos(dragStart.current.x + dx, dragStart.current.y + dy);
+      widgetX.set(x);
+      widgetY.set(y);
     } else if (dist > MOVE_THRESHOLD_PX) {
-      // Not armed yet and the user moved more than the threshold → this
-      // is a swipe/scroll attempt, not a long-press. Cancel the timer
-      // so it can't fire later and steal the gesture.
+      // User moved before long-press fired → this is a swipe/scroll
+      // attempt. Cancel the timer so it can't fire later and steal the
+      // gesture. The browser will continue handling the gesture as a
+      // normal scroll (and will fire pointercancel on the original
+      // pointer, which our handler will clean up).
       clearLongPressTimer();
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     clearLongPressTimer();
-    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    if (widgetRef.current && pointerIdRef.current !== null) {
+      try {
+        widgetRef.current.releasePointerCapture(pointerIdRef.current);
+      } catch {
+        /* ignore */
+      }
+    }
 
-    if (!isDragArmed && pointerStart.current) {
+    if (!isDragArmedRef.current && pointerStart.current) {
       // No long-press fired — was this a tap?
       const dx = e.clientX - pointerStart.current.x;
       const dy = e.clientY - pointerStart.current.y;
@@ -553,93 +653,102 @@ export function Hero3DMobilePreview() {
         setClickCount((c) => c + 1);
       }
     }
-    // If isDragArmed was true, the user dragged — do NOT fire the tap,
-    // so release-after-drag doesn't accidentally toggle the cards.
+    // If drag was armed, the user dragged — do NOT fire the tap, so
+    // release-after-drag doesn't accidentally toggle the cards.
 
-    setIsDragArmed(false);
-    setIsPointerDown(false);
+    isDragArmedRef.current = false;
+    isPointerDownRef.current = false;
+    pointerIdRef.current = null;
     pointerStart.current = null;
   };
 
   const handlePointerCancel = () => {
+    // Browser took over the gesture for scrolling (or it was cancelled
+    // for another reason). Reset everything; no tap or drag fires.
     clearLongPressTimer();
-    setIsDragArmed(false);
-    setIsPointerDown(false);
+    isDragArmedRef.current = false;
+    isPointerDownRef.current = false;
+    pointerIdRef.current = null;
     pointerStart.current = null;
   };
 
   return (
-    // Outer wrapper — `position: fixed` so the widget escapes the hero
-    // section's `overflow-hidden` and can be dragged anywhere on the
-    // visible page. Centered horizontally, positioned in the lower
-    // portion of the viewport (sitting in the empty blue hero area).
-    // `touch-action: none` is scoped to this widget only — touches that
-    // start anywhere else on the page still scroll normally.
-    <div
+    // Outer motion.div — `position: absolute` at the document level
+    // (rendered OUTSIDE the hero section in Home.tsx, so the hero's
+    // `overflow-hidden` doesn't clip it). Framer Motion `x`/`y` motion
+    // values control the document position via transform. The widget
+    // scrolls naturally with the page — it is NOT a permanent viewport
+    // overlay. NO `touch-action: none` — the browser scrolls normally
+    // even when a touch starts on the widget.
+    //
+    // `top: 0; left: 0` is set explicitly so the widget's anchor is the
+    // top-left corner of its containing block (the document-level div in
+    // Home.tsx). Without this, `position: absolute` with no offsets
+    // would default to the "static position" — which is wherever the
+    // `<div className="lg:hidden">` wrapper sits in the document flow
+    // (near the end, since it's a sibling of <main>). That would push
+    // the widget far down the page on initial render. Setting top:0;
+    // left:0 makes the Framer Motion x/y the sole source of truth for
+    // the document position.
+    <motion.div
+      ref={widgetRef}
       style={{
-        position: "fixed",
-        left: "50%",
-        top: "70%",
-        transform: "translate(-50%, -50%)",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        x: widgetX,
+        y: widgetY,
         zIndex: 40,
-        touchAction: "none",
       }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
     >
-      {/* Drag layer — owns the drag offset (x, y). Pointer events for
-          long-press detection + drag are attached here, on the same
-          element that owns the drag transform. */}
+      {/* Float layer — owns the gentle hovering bob. A separate
+          motion.div so the y-animation doesn't fight the drag x/y. */}
       <motion.div
-        style={{ x: dragX, y: dragY }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="relative h-[190px] w-[280px]"
       >
-        {/* Float layer — owns the gentle hovering bob. A separate
-            motion.div so the y-animation doesn't fight the drag x/y. */}
-        <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="relative h-[190px] w-[280px]"
-        >
-          {/* Soft glow behind the cards */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/25 blur-[80px]"
-            aria-hidden
-          />
+        {/* Soft glow behind the cards */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E5BD6]/25 blur-[80px]"
+          aria-hidden
+        />
 
-          {/* Each card wrapper is a NON-animated div that owns the
-              `translate(-50%, -50%)` centering. Previously this was on
-              the motion.div itself, where Framer Motion's animate
-              overwrote it and pushed cards to the lower-right of their
-              anchor — putting the wrapper here keeps the centering
-              intact regardless of what the inner motion.div animates. */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <motion.div animate={card3Target} transition={spring}>
-              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-                <GooglePlayCard />
-              </div>
-            </motion.div>
-          </div>
+        {/* Each card wrapper is a NON-animated div that owns the
+            `translate(-50%, -50%)` centering. Previously this was on
+            the motion.div itself, where Framer Motion's animate
+            overwrote it and pushed cards to the lower-right of their
+            anchor — putting the wrapper here keeps the centering
+            intact regardless of what the inner motion.div animates. */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <motion.div animate={card3Target} transition={spring}>
+            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+              <GooglePlayCard />
+            </div>
+          </motion.div>
+        </div>
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <motion.div animate={card2Target} transition={spring}>
-              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-                <AmazonCard />
-              </div>
-            </motion.div>
-          </div>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <motion.div animate={card2Target} transition={spring}>
+            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+              <AmazonCard />
+            </div>
+          </motion.div>
+        </div>
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <motion.div animate={card1Target} transition={spring}>
-              <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
-                <AppleCard />
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <motion.div animate={card1Target} transition={spring}>
+            <div style={{ transform: "scale(0.38)", transformOrigin: "center" }}>
+              <AppleCard />
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 
