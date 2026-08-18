@@ -592,7 +592,7 @@ function CardsTab({
       toast.error("Brand name is required.");
       return;
     }
-    if (!imageUrl.trim()) {
+    if (isNew && !imageUrl.trim()) {
       toast.error("Upload a card image first.");
       return;
     }
