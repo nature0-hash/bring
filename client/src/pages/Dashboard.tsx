@@ -592,10 +592,6 @@ function CardsTab({
       toast.error("Brand name is required.");
       return;
     }
-    if (!imageUrl.trim()) {
-      toast.error("Upload a card image first.");
-      return;
-    }
     setSaving(true);
     try {
       if (isNew) {
@@ -610,8 +606,10 @@ function CardsTab({
         toast.success(`${card.brand} created.`);
         setSelectedId(card.id);
       } else if (selected) {
+        const finalSlug = slug.trim().toLowerCase().replace(/\s+/g, "-") || selected.slug;
         const { card } = await updateGiftCard(selected.id, {
           brand: brand.trim(),
+          slug: finalSlug,
           imageUrl: imageUrl.trim(),
           category: category || undefined,
           baseRate: pct / 100,
@@ -748,18 +746,17 @@ function CardsTab({
                   />
                 </div>
 
-                {isNew && (
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Slug (URL id, optional)</label>
-                    <input
-                      type="text"
-                      value={slug}
-                      onChange={(e) => setSlug(e.target.value)}
-                      placeholder="auto-generated from brand"
-                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">{isNew ? "Slug (URL id, optional)" : "Slug (URL id)"}</label>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder={isNew ? "auto-generated from brand" : "e.g. steam-wallet"}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                  />
+                  {!isNew && <p className="mt-1 text-xs text-[#6B7384]">Changing this updates the URL path for this card.</p>}
+                </div>
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Category</label>

@@ -57,8 +57,8 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     const category = b.category ? String(b.category) : null;
     const sortOrder = Number(b.sortOrder) || 0;
 
-    if (!brand || !slug || !imageUrl) {
-      return error(res, "brand, slug, and imageUrl are required.", 400);
+    if (!brand || !slug) {
+      return error(res, "brand and slug are required.", 400);
     }
     if (!Number.isFinite(baseRate) || baseRate < 0 || baseRate > 1) {
       return error(res, "baseRate must be a number between 0 and 1 (e.g. 0.82 for 82%).", 400);
@@ -82,6 +82,7 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     if (!existing) return error(res, "Card not found.", 404);
 
     const brand = b.brand !== undefined ? String(b.brand) : existing.brand;
+    const slug = b.slug !== undefined ? String(b.slug).trim().toLowerCase().replace(/\s+/g, "-") : existing.slug;
     const imageUrl = b.imageUrl !== undefined ? String(b.imageUrl) : existing.image_url;
     const category = b.category !== undefined ? String(b.category) : existing.category;
     const isActive = b.isActive !== undefined ? Boolean(b.isActive) : existing.is_active;
@@ -91,10 +92,13 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     if (b.baseRate !== undefined && (!Number.isFinite(baseRate) || baseRate < 0 || baseRate > 1)) {
       return error(res, "baseRate must be a number between 0 and 1.", 400);
     }
+    if (b.slug !== undefined && !slug) {
+      return error(res, "Slug cannot be empty.", 400);
+    }
 
     const updated = await queryOne<CardRow>`
       UPDATE gift_cards
-      SET brand = ${brand}, image_url = ${imageUrl}, category = ${category},
+      SET brand = ${brand}, slug = ${slug}, image_url = ${imageUrl}, category = ${category},
           is_active = ${isActive}, sort_order = ${sortOrder},
           base_rate = ${baseRate.toFixed(4)}, updated_at = NOW()
       WHERE id = ${id}

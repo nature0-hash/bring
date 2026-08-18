@@ -240,9 +240,10 @@ function CardShell({ children, background, withWatermark = true }: CardProps) {
 }
 
 /* APPLE GIFT CARD — clean white card with the colorful scribble Apple
-   logo centered. Layout uses a balanced three-row vertical rhythm so
-   nothing overflows the card frame and the logo breathes inside its
-   padding. */
+   logo centered. The logo is the dominant visual element, sized to feel
+   like the card's identity rather than an overlay. A soft chromatic glow
+   behind the logo creates visual integration with the white surface.
+   Vertical rhythm uses deliberate spacing for a premium, balanced feel. */
 function AppleCard() {
   return (
     <CardShell
@@ -253,14 +254,14 @@ function AppleCard() {
             className="absolute inset-0 opacity-50"
             style={{
               background:
-                "radial-gradient(circle at 80% 20%, rgba(255,200,220,0.18), transparent 50%), radial-gradient(circle at 20% 80%, rgba(200,220,255,0.18), transparent 50%)",
+                "radial-gradient(circle at 50% 48%, rgba(91,134,229,0.07), transparent 55%), radial-gradient(circle at 80% 20%, rgba(255,200,220,0.18), transparent 50%), radial-gradient(circle at 20% 80%, rgba(200,220,255,0.18), transparent 50%)",
             }}
           />
         </>
       }
     >
-      <div className="flex h-full flex-col items-center justify-between py-1 text-center">
-        <div className="pt-1">
+      <div className="flex h-full flex-col items-center text-center">
+        <div className="pt-2.5">
           <p className="font-display text-[20px] font-normal leading-tight text-[#1D1D1F]">
             The gift card for
           </p>
@@ -268,8 +269,19 @@ function AppleCard() {
             everything Apple.
           </p>
         </div>
-        <AppleScribbleLogo className="h-24 w-24" />
-        <p className="pb-1 text-[9px] font-medium uppercase tracking-[0.25em] text-[#86868B]">
+        <div className="relative flex flex-1 items-center justify-center">
+          <div
+            className="pointer-events-none absolute h-36 w-36 rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(91,134,229,0.18) 0%, rgba(255,105,180,0.12) 35%, rgba(255,215,0,0.08) 60%, transparent 80%)",
+              filter: "blur(18px)",
+              opacity: 0.7,
+            }}
+          />
+          <AppleScribbleLogo className="relative h-[118px] w-[118px]" />
+        </div>
+        <p className="pb-2.5 text-[9px] font-medium uppercase tracking-[0.25em] text-[#86868B]">
           App Store · iTunes
         </p>
       </div>

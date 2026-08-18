@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { Search, X, ImageOff } from "lucide-react";
 import type { GiftCard } from "@/lib/types";
 import { CARD_CATEGORIES } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
-import { BrandCardArt } from "@/components/BrandCardArt";
 
 interface CardGridProps {
   cards: GiftCard[];
@@ -12,46 +11,10 @@ interface CardGridProps {
   onSelectCard?: (slug: string) => void;
 }
 
-/**
- * Real-world purchasable denominations per brand: the single-card values
- * a customer can actually buy in stores / online. "custom" marks brands
- * that also sell variable-load cards above the listed values.
- *
- * This tells visitors what card values exist (e.g. you can't buy one
- * physical $300 Apple card, but Apple does sell custom loads).
- */
-const BRAND_DENOMINATIONS: Record<string, { values: number[]; custom?: boolean }> = {
-  steam:         { values: [5, 10, 20, 25, 50, 100] },
-  apple:         { values: [25, 50, 100, 200], custom: true },
-  itunes:        { values: [25, 50, 100, 200], custom: true },
-  amazon:        { values: [10, 25, 50, 100, 200, 500], custom: true },
-  "google-play": { values: [10, 15, 25, 50, 100, 200] },
-  xbox:          { values: [15, 25, 50, 100] },
-  playstation:   { values: [25, 50, 75, 100, 200] },
-  netflix:       { values: [15, 25, 30, 50, 100] },
-  spotify:       { values: [10, 30, 60] },
-  ebay:          { values: [25, 50, 100, 150, 200] },
-  walmart:       { values: [25, 50, 100, 200, 500], custom: true },
-  target:        { values: [10, 25, 50, 100, 500], custom: true },
-  "best-buy":    { values: [25, 50, 100, 200, 500] },
-  sephora:       { values: [10, 25, 50, 100, 250] },
-  nike:          { values: [25, 50, 100, 200, 250] },
-  adidas:        { values: [10, 25, 50, 100, 250] },
-  roblox:        { values: [10, 25, 50, 100] },
-  discord:       { values: [10, 25, 50, 100] },
-  "epic-games":  { values: [10, 25, 50, 100] },
-  epic:          { values: [10, 25, 50, 100] },
-  uber:          { values: [15, 25, 50, 100, 500], custom: true },
-  airbnb:        { values: [25, 50, 100, 200, 500], custom: true },
-  visa:          { values: [25, 50, 100, 200, 500] },
-  mastercard:    { values: [25, 50, 100, 200, 500] },
-  amex:          { values: [25, 50, 100, 200, 500] },
-  "american-express": { values: [25, 50, 100, 200, 500] },
-  "razer-gold":  { values: [10, 20, 25, 50, 100] },
-  razer:         { values: [10, 20, 25, 50, 100] },
-};
-
-const DEFAULT_DENOMINATIONS = { values: [25, 50, 100, 200, 500] as number[], custom: false };
+/** Universal default denominations shown on every card.
+ *  The actual tradeable amounts come from the admin-configured
+ *  card_rates (Local Rates) — these chips are just visual hints. */
+const DEFAULT_DENOMINATIONS = { values: [10, 25, 50, 100, 200] as number[], custom: false };
 
 export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
   const [query, setQuery] = useState("");
@@ -157,7 +120,7 @@ export function CardGrid({ cards, loading, onSelectCard }: CardGridProps) {
 }
 
 function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
-  const denoms = BRAND_DENOMINATIONS[card.slug] ?? DEFAULT_DENOMINATIONS;
+  const denoms = DEFAULT_DENOMINATIONS;
   return (
     <motion.article
       whileHover={{ y: -4 }}
@@ -176,7 +139,10 @@ function CardTile({ card, onClick }: { card: GiftCard; onClick: () => void }) {
         {card.imageUrl ? (
           <img src={card.imageUrl} alt={card.brand} className="h-full w-full object-cover" />
         ) : (
-          <BrandCardArt slug={card.slug} brand={card.brand} />
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+            <ImageOff className="h-8 w-8 text-slate-300 sm:h-10 sm:w-10" />
+            <span className="mt-1 text-[10px] font-medium text-slate-400 sm:text-xs">No image</span>
+          </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>

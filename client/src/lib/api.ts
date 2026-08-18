@@ -107,7 +107,7 @@ export function createGiftCard(data: {
 
 export function updateGiftCard(
   id: number,
-  data: Partial<{ brand: string; imageUrl: string; category: string; isActive: boolean; sortOrder: number; baseRate: number }>
+  data: Partial<{ brand: string; slug: string; imageUrl: string; category: string; isActive: boolean; sortOrder: number; baseRate: number }>
 ): Promise<{ card: GiftCard }> {
   return request<{ card: GiftCard }>("/api/cards", {
     method: "PATCH",
