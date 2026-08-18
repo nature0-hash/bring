@@ -17,6 +17,7 @@ import {
 import { Header } from "@/components/Header";
 import { Hero3D, Hero3DMobilePreview } from "@/components/Hero3D";
 
+import { CardGrid } from "@/components/CardGrid";
 import { RateCalculator } from "@/components/RateCalculator";
 import { Footer } from "@/components/Footer";
 
@@ -79,6 +80,8 @@ export default function Home() {
           selectedSlug={selectedSlug}
           onSelectSlug={setSelectedSlug}
         />
+        <CardsSection cards={cards} loading={loadingCards} onSelectCard={setSelectedSlug} />
+
         <ServicesSection />
         <WhyUs />
         <AboutSection siteImages={siteImages} whatsappLink={whatsappLink} />
@@ -353,9 +356,38 @@ function HowItWorks() {
   );
 }
 
-/* CARDS SECTION — removed per request. The gift card grid is no longer
-   rendered on the public home page. The dashboard at /dashboard still has
-   the full create / edit / save admin UI. */
+/* CARDS SECTION */
+function CardsSection({
+  cards,
+  loading,
+  onSelectCard,
+}: {
+  cards: GiftCard[];
+  loading: boolean;
+  onSelectCard?: (slug: string) => void;
+}) {
+  return (
+    <section className="relative bg-gradient-to-b from-white to-[#F4F7FC] py-28 sm:py-36">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <AnimatedSection>
+          <div className="mx-auto mb-16 max-w-2xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#0047AB]">
+              Live card rates
+            </p>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight text-[#0A1224] sm:text-4xl lg:text-5xl">
+              All brands. Best rates.
+            </h2>
+            <p className="mt-4 text-base text-[#6B7384] sm:text-lg">
+              Rates update in real time. Search any brand to see what you'll get paid today.
+            </p>
+          </div>
+        </AnimatedSection>
+
+        <CardGrid cards={cards} loading={loading} onSelectCard={onSelectCard} />
+      </div>
+    </section>
+  );
+}
 
 /* SERVICES */
 function ServicesSection() {

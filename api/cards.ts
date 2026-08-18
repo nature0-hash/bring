@@ -82,7 +82,7 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     if (!existing) return error(res, "Card not found.", 404);
 
     const brand = b.brand !== undefined ? String(b.brand) : existing.brand;
-    const imageUrl = b.imageUrl !== undefined && String(b.imageUrl).trim() !== "" ? String(b.imageUrl) : existing.image_url;
+    const imageUrl = b.imageUrl !== undefined ? String(b.imageUrl) : existing.image_url;
     const category = b.category !== undefined ? String(b.category) : existing.category;
     const isActive = b.isActive !== undefined ? Boolean(b.isActive) : existing.is_active;
     const sortOrder = b.sortOrder !== undefined ? Number(b.sortOrder) : existing.sort_order;

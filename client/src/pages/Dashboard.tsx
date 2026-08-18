@@ -239,7 +239,7 @@ export default function Dashboard() {
                   <OverviewTab user={user} cards={cards} loadingCards={loadingCards} onGoToCards={() => setTab("cards")} />
                 )}
                 {tab === "cards" && (
-                  <CardsTab />
+                  <CardsTab cards={cards} loading={loadingCards} onRefresh={refreshCards} />
                 )}
                 {tab === "rates" && <LocalRatesTab cards={cards} countries={countries} />}
                 {tab === "countries" && (
@@ -537,12 +537,312 @@ function OverviewTab({
   );
 }
 
-/* GIFT CARDS TAB — emptied per request. The card list, edit form,
-   "+ New card" button, and all SVG/brand-denomination history have been
-   removed. The tab now renders nothing. */
-function CardsTab() {
-  return null;
+/* GIFT CARDS TAB */
+function CardsTab({
+  cards,
+  loading,
+  onRefresh,
+}: {
+  cards: GiftCard[];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const { t } = useLanguage();
+  const [selectedId, setSelectedId] = useState<number | "new" | null>(null);
+  const [brand, setBrand] = useState("");
+  const [slug, setSlug] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [category, setCategory] = useState("");
+  const [rateInput, setRateInput] = useState("");
+  const [sortOrder, setSortOrder] = useState("0");
+  const [isActive, setIsActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const selected = typeof selectedId === "number" ? cards.find((c) => c.id === selectedId) ?? null : null;
+  const isNew = selectedId === "new";
+
+  useEffect(() => {
+    if (selected) {
+      setBrand(selected.brand);
+      setSlug(selected.slug);
+      setImageUrl(selected.imageUrl);
+      setCategory(selected.category ?? "");
+      setRateInput((selected.baseRate * 100).toFixed(1));
+      setSortOrder(String(selected.sortOrder));
+      setIsActive(selected.isActive);
+    } else if (isNew) {
+      setBrand("");
+      setSlug("");
+      setImageUrl("");
+      setCategory("");
+      setRateInput("80");
+      setSortOrder("0");
+      setIsActive(true);
+    }
+  }, [selected, isNew]);
+
+  const handleSave = async () => {
+    const pct = parseFloat(rateInput);
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      toast.error("Rate must be a number between 0 and 100.");
+      return;
+    }
+    if (!brand.trim()) {
+      toast.error("Brand name is required.");
+      return;
+    }
+    if (!imageUrl.trim()) {
+      toast.error("Upload a card image first.");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (isNew) {
+        const finalSlug = (slug.trim() || brand).toLowerCase().replace(/\s+/g, "-");
+        const { card } = await createGiftCard({
+          brand: brand.trim(),
+          slug: finalSlug,
+          imageUrl: imageUrl.trim(),
+          baseRate: pct / 100,
+          category: category || undefined,
+        });
+        toast.success(`${card.brand} created.`);
+        setSelectedId(card.id);
+      } else if (selected) {
+        const { card } = await updateGiftCard(selected.id, {
+          brand: brand.trim(),
+          imageUrl: imageUrl.trim(),
+          category: category || undefined,
+          baseRate: pct / 100,
+          sortOrder: Number(sortOrder) || 0,
+          isActive,
+        });
+        toast.success(`${card.brand} updated.`);
+      }
+      onRefresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save card.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    if (!confirm(`Delete "${selected.brand}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await deleteGiftCard(selected.id);
+      toast.success(`${selected.brand} deleted.`);
+      setSelectedId(null);
+      onRefresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete card.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title={t("tab.cards", "Gift Cards")}
+        subtitle={t("gc.subtitle", "Create, edit, and organize every brand on your storefront.")}
+        action={
+          <button
+            onClick={() => setSelectedId("new")}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#0047AB]/25 hover:shadow-xl transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            {t("gc.newCard", "New card")}
+          </button>
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="border-b border-[#E2E8F0] px-6 py-4">
+              <h3 className="font-display text-base font-bold text-[#0A1224]">{t("gc.allCards", "All gift cards")}</h3>
+              <p className="text-xs text-[#6B7384]">{t("gc.tapEdit", "Tap a card to edit it")}</p>
+            </div>
+            {loading ? (
+              <div className="p-8 text-center text-sm text-[#6B7384]">Loading cards…</div>
+            ) : (
+              <div className="max-h-[600px] divide-y divide-[#F4F7FC] overflow-y-auto">
+                {cards.map((card) => (
+                  <button
+                    key={card.id}
+                    onClick={() => setSelectedId(card.id)}
+                    className={`flex w-full items-center justify-between px-6 py-4 text-left transition-colors ${
+                      selectedId === card.id ? "bg-[#F4F7FC]" : "hover:bg-[#F4F7FC]/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#0047AB]/10 to-[#1E5BD6]/10 text-xs font-bold text-[#0047AB]">
+                        {card.imageUrl ? (
+                          <img src={card.imageUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          card.brand.slice(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#0A1224]">{card.brand}</p>
+                        <p className="text-xs text-[#6B7384]">
+                          /{card.slug} {card.category && `· ${card.category}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-mono text-sm font-bold text-[#0047AB]">{(card.baseRate * 100).toFixed(1)}%</p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          card.isActive ? "bg-[#16A34A]/10 text-[#16A34A]" : "bg-[#9CA3AF]/10 text-[#6B7384]"
+                        }`}
+                      >
+                        {card.isActive ? "Active" : "Hidden"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="lg:col-span-2">
+          <div className="sticky top-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="border-b border-[#E2E8F0] bg-gradient-to-br from-[#F4F7FC] to-[#E6EEFB] px-6 py-4">
+              <h3 className="font-display text-base font-bold text-[#0A1224]">
+                {isNew ? "New gift card" : selected ? "Edit gift card" : "Edit gift card"}
+              </h3>
+              <p className="text-xs text-[#6B7384]">Changes go live instantly</p>
+            </div>
+
+            {!selected && !isNew ? (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F4F7FC]">
+                  <CreditCard className="h-5 w-5 text-[#6B7384]" />
+                </div>
+                <p className="text-sm font-semibold text-[#0A1224]">No card selected</p>
+                <p className="mt-1 text-xs text-[#6B7384]">Pick a card from the list, or create a new one.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 p-6">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Card image</label>
+                  <ImageUploader value={imageUrl} onUploaded={setImageUrl} label={brand} />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Brand name</label>
+                  <input
+                    type="text"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="e.g. Steam"
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                  />
+                </div>
+
+                {isNew && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Slug (URL id, optional)</label>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value)}
+                      placeholder="auto-generated from brand"
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                  >
+                    <option value="">No category</option>
+                    {CARD_CATEGORIES.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Fallback payout rate (%)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={rateInput}
+                      onChange={(e) => setRateInput(e.target.value)}
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 pl-4 pr-10 text-sm font-mono font-bold text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6B7384]">%</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-[#6B7384]">
+                    Used when no country-specific local rate is set for a given amount.
+                  </p>
+                </div>
+
+                {!isNew && (
+                  <>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#0A1224]">Sort order</label>
+                      <input
+                        type="number"
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl bg-[#F4F7FC] px-4 py-3">
+                      <span className="text-sm font-medium text-[#0A1224]">Visible on public site</span>
+                      <Toggle checked={isActive} onChange={() => setIsActive((v) => !v)} />
+                    </div>
+                  </>
+                )}
+
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0047AB] to-[#1E5BD6] py-3 text-sm font-semibold text-white shadow-lg shadow-[#0047AB]/25 transition-all hover:shadow-xl disabled:opacity-70"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                  {isNew ? "Create card" : "Save changes"}
+                </button>
+
+                {!isNew && selected && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#DC2626]/30 bg-white py-2.5 text-sm font-semibold text-[#DC2626] hover:bg-[#DC2626]/5 transition-colors disabled:opacity-70"
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Delete card
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
+
 /* LOCAL RATES TAB */
 function LocalRatesTab({ cards, countries }: { cards: GiftCard[]; countries: Country[] }) {
   const { t } = useLanguage();
