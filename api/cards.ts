@@ -67,7 +67,17 @@ export default withCors(async (req: VercelRequest, res: VercelResponse) => {
     const imageUrl = String(b.imageUrl ?? "").trim();
     const baseRate = Number(b.baseRate);
     const category = b.category ? String(b.category) : null;
-    const sortOrder = Number(b.sortOrder) || 0;
+    // sort_order: if the caller explicitly provides a non-negative
+    // integer, honor it. Otherwise, append the new card to the END of
+    // the existing list (max(sort_order) + 1) so newly-created cards
+    // don't jump to the top and break the persisted drag-and-drop order.
+    let sortOrder = Number(b.sortOrder);
+    if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+      const maxRow = await queryOne<{ max_sort: number }>`
+        SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM gift_cards
+      `;
+      sortOrder = (maxRow?.max_sort ?? -1) + 1;
+    }
 
     if (!brand || !slug) {
       return error(res, "brand and slug are required.", 400);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
 import {
   LayoutDashboard,
   CreditCard,
@@ -22,6 +22,7 @@ import {
   Settings as SettingsIcon,
   Upload,
   Pencil,
+  GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -562,10 +563,21 @@ function CardsTab({
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Whether a drag-to-reorder save is in flight (used to disable row
+  // interactions briefly while the order is being persisted).
+  const [reordering, setReordering] = useState(false);
+  // Local copy of the cards list, kept in sync with the `cards` prop.
+  // Framer Motion's Reorder.Group controls this local state directly so
+  // the UI can update instantly on drag (optimistic update), then the
+  // new order is persisted to the database via PATCH /api/cards.
+  const [localCards, setLocalCards] = useState<GiftCard[]>(cards);
+  useEffect(() => {
+    setLocalCards(cards);
+  }, [cards]);
 
   const selected =
     typeof selectedId === "number"
-      ? cards.find((c) => Number(c.id) === Number(selectedId)) ?? null
+      ? localCards.find((c) => Number(c.id) === Number(selectedId)) ?? null
       : null;
   const isNew = selectedId === "new";
 
@@ -588,6 +600,42 @@ function CardsTab({
       setIsActive(true);
     }
   }, [selected, isNew]);
+
+  // handleReorder: called by Reorder.Group when the user drags a row to a
+  // new position. `newOrder` is the full cards array in the new order.
+  // We:
+  //   1. Update localCards immediately (optimistic — UI shows new order).
+  //   2. Send a PATCH /api/cards for each card with its new sort_order
+  //      (the index in the array). This re-numbers EVERY card so there
+  //      are no duplicate/gap sort_order values — the order is always
+  //      deterministic. The existing PATCH endpoint supports partial
+  //      updates, so sending only { id, sortOrder } leaves all other
+  //      fields (brand, image, category, isActive, baseRate) untouched.
+  //   3. On success, call onRefresh() to re-fetch from the database —
+  //      this confirms the saved order and refreshes the `selected`
+  //      card's sortOrder in the editor panel.
+  //   4. On failure, call onRefresh() to restore the last persisted
+  //      order (undoing the optimistic local update) and surface the
+  //      error via toast. The UI never stays visually reordered while
+  //      the database still has the old order.
+  const handleReorder = async (newOrder: GiftCard[]) => {
+    setLocalCards(newOrder);
+    setReordering(true);
+    try {
+      await Promise.all(
+        newOrder.map((card, index) =>
+          updateGiftCard(Number(card.id), { sortOrder: index })
+        )
+      );
+      toast.success("Card order saved.");
+      onRefresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save card order.");
+      onRefresh();
+    } finally {
+      setReordering(false);
+    }
+  };
 
   const handleSave = async () => {
     const pct = parseFloat(rateInput);
@@ -676,45 +724,26 @@ function CardsTab({
             {loading ? (
               <div className="p-8 text-center text-sm text-[#6B7384]">Loading cards…</div>
             ) : (
-              <div className="max-h-[600px] divide-y divide-[#F4F7FC] overflow-y-auto">
-                {cards.map((card) => (
-                  <button
+              <Reorder.Group
+                as="div"
+                axis="y"
+                values={localCards}
+                onReorder={handleReorder}
+                className="max-h-[600px] divide-y divide-[#F4F7FC] overflow-y-auto"
+                // `dragControls` is per-row (one hook per SortableCardRow),
+                // so dragging only starts from the grip handle. Clicking
+                // elsewhere on the row still selects the card for editing.
+              >
+                {localCards.map((card) => (
+                  <SortableCardRow
                     key={card.id}
-                    onClick={() => setSelectedId(Number(card.id))}
-                    className={`flex w-full items-center justify-between px-6 py-4 text-left transition-colors ${
-                      selectedId === Number(card.id) ? "bg-[#F4F7FC]" : "hover:bg-[#F4F7FC]/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#0047AB]/10 to-[#1E5BD6]/10 text-xs font-bold text-[#0047AB]">
-                        {card.imageUrl ? (
-                          <img src={card.imageUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          card.brand.slice(0, 2).toUpperCase()
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[#0A1224]">{card.brand}</p>
-                        <p className="text-xs text-[#6B7384]">
-                          /{card.slug} {card.category && `· ${card.category}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-mono text-sm font-bold text-[#0047AB]">{(card.baseRate * 100).toFixed(1)}%</p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                          card.isActive ? "bg-[#16A34A]/10 text-[#16A34A]" : "bg-[#9CA3AF]/10 text-[#6B7384]"
-                        }`}
-                      >
-                        {card.isActive ? "Active" : "Hidden"}
-                      </span>
-                    </div>
-                  </button>
+                    card={card}
+                    selected={selectedId === Number(card.id)}
+                    disabled={reordering}
+                    onSelect={() => setSelectedId(Number(card.id))}
+                  />
                 ))}
-              </div>
+              </Reorder.Group>
             )}
           </div>
         </div>
@@ -812,6 +841,9 @@ function CardsTab({
                         onChange={(e) => setSortOrder(e.target.value)}
                         className="w-full rounded-xl border border-[#E2E8F0] bg-[#F4F7FC] py-2.5 px-4 text-sm text-[#0A1224] focus:border-[#0047AB] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 transition-all"
                       />
+                      <p className="mt-1.5 text-xs text-[#6B7384]">
+                        Reflects the card's position in the list above — drag rows to reorder.
+                      </p>
                     </div>
 
                     <div className="flex items-center justify-between rounded-xl bg-[#F4F7FC] px-4 py-3">
@@ -846,6 +878,100 @@ function CardsTab({
         </div>
       </div>
     </div>
+  );
+}
+
+/* SORTABLE CARD ROW — a single row in the admin "All gift cards" list.
+   Wrapped in Framer Motion's Reorder.Item so it can be dragged up/down
+   to reorder. Dragging only starts from the grip handle (the
+   useDragControls hook + dragListener={false} pattern), so clicking the
+   rest of the row still selects the card for editing — drag and click
+   don't fight each other. */
+function SortableCardRow({
+  card,
+  selected,
+  disabled,
+  onSelect,
+}: {
+  card: GiftCard;
+  selected: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+}) {
+  const dragControls = useDragControls();
+  return (
+    <Reorder.Item
+      value={card}
+      dragListener={false}
+      dragControls={dragControls}
+      // Solid white background so the row looks clean while being
+      // dragged (it's translated on top of other rows — without a
+      // background, the rows underneath would show through).
+      className="bg-white"
+      whileDrag={{ boxShadow: "0 10px 30px -10px rgba(0,71,171,0.25)", zIndex: 30 }}
+    >
+      <div
+        className={`flex w-full items-center gap-2 px-6 py-4 transition-colors ${
+          selected ? "bg-[#F4F7FC]" : "hover:bg-[#F4F7FC]/60"
+        }`}
+      >
+        {/* Drag handle — the only place that initiates a reorder drag.
+            onPointerDown starts Framer Motion's drag; pointer capture
+            is handled by Framer Motion internally. A button element
+            gives us accessible keyboard focus + an aria-label for
+            screen readers (no visible instruction text is added). */}
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            if (!disabled) dragControls.start(e);
+          }}
+          aria-label="Reorder card"
+          className="flex-none cursor-grab touch-none rounded p-1 text-[#9CA3AF] transition-colors hover:text-[#0A1224] disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={disabled}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+
+        {/* Row content — clicking this selects the card for editing.
+            The grip handle is a sibling (not nested) so we don't end
+            up with a <button> inside a <button> (which is invalid
+            HTML). The row content fills the remaining width and uses
+            justify-between to keep the existing left/right layout. */}
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#0047AB]/10 to-[#1E5BD6]/10 text-xs font-bold text-[#0047AB]">
+              {card.imageUrl ? (
+                <img src={card.imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                card.brand.slice(0, 2).toUpperCase()
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#0A1224]">{card.brand}</p>
+              <p className="text-xs text-[#6B7384]">
+                /{card.slug} {card.category && `· ${card.category}`}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="font-mono text-sm font-bold text-[#0047AB]">{(card.baseRate * 100).toFixed(1)}%</p>
+            </div>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                card.isActive ? "bg-[#16A34A]/10 text-[#16A34A]" : "bg-[#9CA3AF]/10 text-[#6B7384]"
+              }`}
+            >
+              {card.isActive ? "Active" : "Hidden"}
+            </span>
+          </div>
+        </button>
+      </div>
+    </Reorder.Item>
   );
 }
 
